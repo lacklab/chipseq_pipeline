@@ -1,10 +1,10 @@
 rule sra_prefetch:
-        output:
-                temp("sra-data/{SRA}/{SRA}.sra")
-        shell:
-                """
-                prefetch -O sra-data {wildcards.SRA}
-                """
+    output:
+        temp("sra-data/{SRA}/{SRA}.sra")
+    shell:
+        """
+        prefetch -O sra-data {wildcards.SRA}
+        """
 
 rule parallel_fastq_dump:
     input:

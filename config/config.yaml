@@ -6,11 +6,8 @@ OUTPUT:
         QC: False
         PEAKS: True
         BWS: True
-        CHIPATLAS_BEDS: False
-        CHIPATLAS_BWS: False
     BW_NORMALIZATIONS:
         - rawcount
-    CHIPATLAS_THRESHOLD: 50
     BAMPROCESS_PARAMS: -q 30
     MACS_THRESHOLD: 0.01
 
