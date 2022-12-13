@@ -1,0 +1,5 @@
+.snakemake
+*/.snakemake
+
+config/samples.tsv
+config/units.tsv
