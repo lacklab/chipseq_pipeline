@@ -8,6 +8,7 @@ OUTPUT:
         BWS: True
     BW_NORMALIZATIONS:
         - rawcount
+        - RPM
     BAMPROCESS_PARAMS: -q 30
     MACS_THRESHOLD: 0.01
 
