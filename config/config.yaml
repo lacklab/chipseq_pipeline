@@ -12,6 +12,7 @@ OUTPUT:
         - rawcount
     CHIPATLAS_THRESHOLD: 50
     BAMPROCESS_PARAMS: -q 30
+    MACS_THRESHOLD: 0.01
 
 REF:
     NAME: hg19

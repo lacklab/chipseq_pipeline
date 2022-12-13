@@ -4,6 +4,7 @@
 config/samples.tsv
 config/units.tsv
 
-results/
+results_*/
 sra-data/
 raw-data/
+logs/

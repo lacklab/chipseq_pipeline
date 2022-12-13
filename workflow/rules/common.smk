@@ -29,21 +29,22 @@ def get_contol(wildcards):
 
 # >>> `qc.smk` >>>
 def get_multiqc(wildcards):
-    out = []
-    for raw in units["Raw"]:
-        lib = get_lib(wildcards)
-        fq1 = get_fq1(wildcards)
+	out = []
+	for raw in units["Raw"]:
+		lib = get_lib(wildcards)
+		fq1 = get_fq1(wildcards)
 		fq2 = get_fq2(wildcards)
 		if lib == "Single":
-			return fq1
+			out.append(fq1)
 		elif lib == "Paired":
-			return fq1, fq2
-    return expand(out)
+			out.append(fq1)
+			out.append(fq2)
+	return expand(out)
 # <<< `qc.smk` <<<
 
 # >>> `map.smk` functions >>>
 def get_fqs(wildcards):
-	name, unit = wildcards.raw.split("_")
+	name, unit = wildcards.raw.rsplit("_",1)
 	fq1 = units.loc[units["Name"] == name,"Fastq1"].unique()[0]
 	source = str(fq1).find("SRR") != -1
 	lib = get_lib(wildcards)
@@ -94,7 +95,7 @@ def get_macs_i(wildcards):
 	inputs.append(f"results_{wildcards.ref}/mapping/{wildcards.raw}.final.bam")
 	return inputs
 # >>> `peak.smk` functions
-ß
+
 ref = config["REF"]["NAME"]
 bwNorm = config["OUTPUT"]["BW_NORMALIZATIONS"]
 
