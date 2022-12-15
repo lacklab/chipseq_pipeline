@@ -28,17 +28,33 @@ def get_contol(wildcards):
 # <<< utils <<<
 
 # >>> `qc.smk` >>>
+
+fastqc_map = {}
+for u in units["Fastq1"].tolist() + units["Fastq2"].tolist():
+	if (u.find("gz") != -1) or (u.find("zip") != -1):
+		fastqc_map[u.rsplit(".", 2)[0]] = u
+	elif u.find("SRR") != -1:
+		fastqc_map[u] = f"sra-data/{u}_1.fastq.gz"
+	elif u != "-":
+		fastqc_map[u.rsplit(".", 1)[0]] = u
+
+def get_fastqc(wildcards):
+	return fastqc_map[wildcards.raw]
+
 def get_multiqc(wildcards):
 	out = []
-	for raw in units["Raw"]:
-		lib = get_lib(wildcards)
-		fq1 = get_fq1(wildcards)
-		fq2 = get_fq2(wildcards)
+	for i, row in units.iterrows():
+		lib = row["Library"]
+		fq1 = row["Fastq1"]
+		fq2 = row["Fastq2"]
+		if fq1.find("gz") != -1:
+			fq1 = fq1.rsplit(".", 2)
+			fq2 = fq2.rsplit(".", 2)
 		if lib == "Single":
-			out.append(fq1)
+			out.append(f"qc/{fq1}_fastqc.zip")
 		elif lib == "Paired":
-			out.append(fq1)
-			out.append(fq2)
+			out.append(f"qc/{fq1}_fastqc.zip")
+			out.append(f"qc/{fq2}_fastqc.zip")
 	return expand(out)
 # <<< `qc.smk` <<<
 

@@ -2,7 +2,7 @@ rule map_bwa:
     input:
         get_fqs
     output:
-        "results_{ref}/mapping/{raw}.raw.bam"
+        temp("results_{ref}/mapping/{raw}.raw.bam")
     params:
         idx = config["REF"]["BWA_IDX"]
     threads:
@@ -17,7 +17,7 @@ rule bam_process:
     input:
         "results_{ref}/mapping/{raw}.raw.bam"
     output:
-        "results_{ref}/mapping/{raw}.coorsorted.bam"
+        temp("results_{ref}/mapping/{raw}.coorsorted.bam")
     threads:
         32
     params:
@@ -34,7 +34,7 @@ rule bam_filter:
     input:
         "results_{ref}/mapping/{raw}.coorsorted.bam"
     output:
-        "results_{ref}/mapping/{raw}.filtered.bam"
+        temp("results_{ref}/mapping/{raw}.filtered.bam")
     threads:
         32
     params:
