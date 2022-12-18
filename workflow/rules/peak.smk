@@ -12,4 +12,5 @@ rule macs:
         macs3 callpeak \
           {params}  \
           -g hs -n results_{wildcards.ref}/peaks/{wildcards.raw}_{wildcards.q} -B -q {wildcards.q}
+        mv results_{wildcards.ref}/peaks/{wildcards.raw}_{wildcards.q}_peaks.xls qc/.
         """

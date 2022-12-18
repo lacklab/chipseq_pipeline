@@ -3,9 +3,9 @@ UNITS: config/units.tsv
 
 OUTPUT:
     RUN:
-        QC: TRUE
-        PEAKS: True
-        BWS: True
+        QC: True
+        PEAKS: False
+        BWS: False
     BW_NORMALIZATIONS:
         - rawcount
         - RPM

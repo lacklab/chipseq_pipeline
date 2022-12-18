@@ -8,8 +8,9 @@ samples = pd.read_table(config["SAMPLES"])
 
 # `units` includes all files that need to be preprocessed
 units = pd.read_table(config["UNITS"])
-
 units["Raw"] = units["Name"] + "_" + units["Unit"].astype(str)
+
+ref = config["REF"]["NAME"]
 # >>> utils >>>
 def get_lib(wildcards):
 	return units.loc[units["Raw"] == wildcards.raw, "Library"].unique()[0]
@@ -28,7 +29,6 @@ def get_contol(wildcards):
 # <<< utils <<<
 
 # >>> `qc.smk` >>>
-
 fastqc_map = {}
 for u in units["Fastq1"].tolist() + units["Fastq2"].tolist():
 	if (u.find("gz") != -1) or (u.find("zip") != -1):
@@ -40,6 +40,12 @@ for u in units["Fastq1"].tolist() + units["Fastq2"].tolist():
 
 def get_fastqc(wildcards):
 	return fastqc_map[wildcards.raw]
+
+def get_annotatepeaks(wildcards):
+	out = []
+	for i, row in samples.iterrows():
+		out.append(f"qc/{ref}:{row['Name']}.annotatePeaks.txt")
+	return expand(out)
 
 def get_multiqc(wildcards):
 	out = []
@@ -55,6 +61,13 @@ def get_multiqc(wildcards):
 		elif lib == "Paired":
 			out.append(f"qc/{fq1}_fastqc.zip")
 			out.append(f"qc/{fq2}_fastqc.zip")
+
+		out.append(f"qc/{ref}:{row['Raw']}.raw.bam_flagstat")
+		out.append(f"qc/{ref}:{row['Name']}.final.bam_flagstat")
+
+		out.append(f"qc/{ref}:{row['Name']}.final.bam_stats")
+
+	out.append("qc/annotatepeaks.summary_mqc.tsv")
 	return expand(out)
 # <<< `qc.smk` <<<
 
@@ -112,7 +125,7 @@ def get_macs_i(wildcards):
 	return inputs
 # >>> `peak.smk` functions
 
-ref = config["REF"]["NAME"]
+
 bwNorm = config["OUTPUT"]["BW_NORMALIZATIONS"]
 
 outputs = []
