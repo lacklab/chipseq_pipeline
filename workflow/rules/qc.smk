@@ -32,31 +32,46 @@ rule homer_annotatepeaks:
 	input:
 		"results_{ref}/peaks/{raw}_{q}_peaks.narrowPeak"
 	output:
-		"qc/{ref}:{raw}_{q}.annotatepeaks.txt"
+		temp("qc/{ref}:{raw}_{q}.annotatepeaks.txt")
 	shell:
 		"""
 		annotatePeaks.pl {input} {ref} > {output}
 		"""
 
 from collections import Counter
-import re
 rule annotatepeaks_merge:
 	input:
-		get_annotatepeaks
+		"qc/{ref}:{raw}_{q}.annotatepeaks.txt"
 	output:
-		"qc/annotatepeaks.summary_mqc.tsv"
+		"qc/{ref}:{raw}_{q}.annotatepeaks.summary_mqc.txt"
 	run:
 		header = ["intron","intergenic", "promoter-tss", "exon", "tts", "5' utr", "3' utr"]
-		with open(output) as f:
-			f.write("\t".join(["Sample Name"] + header))
-			for s in input:
-				sample_name = re.split(s, "/|\.")[1]
-				tmp = pd.read_table(s)
-				tmp = tmp.rename(columns={tmp.columns[0]: "PeakID"})
-				tmp["shortAnn"] = tmp["Annotation"].str.split("(", expand=True)[0].str.upper()
-				nAnnot = Counter(tmp["shortAnn"])
-				f.write("\t".join([sample_name] + [nAnnot[h] for h in header]))
-				
+		with open(output, "w") as f:
+			f.write(assets["annotatepeaks"])
+			tmp = pd.read_table(input).rename(columns={tmp.columns[0]: "PeakID"})
+			tmp["shortAnn"] = tmp["Annotation"].str.split("(", expand=True)[0].str.upper()
+			nAnnot = Counter(tmp["shortAnn"])
+			for k, v in nAnnot.items():
+				f.write(f"{k}\t{v}\n")
+
+import deeptools.countReadsPerBin as crpb			
+rule frip:
+	input:
+		get_frip
+	output:
+		"qc/frip_mqc.tsv"
+	run:
+		with open(output, "w") as f:
+			f.write("# plot_type: 'generalstats'\n")
+			f.write("Sample Name\tFRiP")
+			for b, p in zip(input["BAMS"], input["PEAKS"]):
+				cr = crpb.CountReadsPerBin([b],bedFile=[p],numberOfProcessors=10)
+				reads_at_peaks = cr.run()
+				total = reads_at_peaks.sum(axis=0)
+				bam = pysam.AlignmentFile(b)
+				name = b.split("/")[-1].split("_peaks")[0]
+				f.write(f"{name}\t{float(total[0]) / bam.mapped}")
+
 # TODO: This can be written in a script.	
 
 rule multiqc:

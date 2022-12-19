@@ -47,6 +47,13 @@ def get_annotatepeaks(wildcards):
 		out.append(f"qc/{ref}:{row['Name']}.annotatePeaks.txt")
 	return expand(out)
 
+def get_frip(wildcards):
+	out = {"BAMS": [], "PEAKS": []}
+	for i, row in samples.iterrows():
+		out["BAMS"].append(f"results_{ref}/mapping/{row['Name']}.final.bam")
+		out["PEAKS"].append(f"results_{ref}/peaks/{row['Name']}_{q}_peaks.narrowPeak")
+	return out
+
 def get_multiqc(wildcards):
 	out = []
 	for i, row in units.iterrows():
@@ -68,6 +75,7 @@ def get_multiqc(wildcards):
 		out.append(f"qc/{ref}:{row['Name']}.final.bam_stats")
 
 	out.append("qc/annotatepeaks.summary_mqc.tsv")
+	out.append("qc/frip_mqc.tsv")
 	return expand(out)
 # <<< `qc.smk` <<<
 
@@ -146,3 +154,12 @@ if config["OUTPUT"]["RUN"]["BWS"]:
 		for raw in samples["Name"]
 		for norm in bwNorm
 	]
+
+
+# >>> Assets >>>
+assets = {}
+with open("assets/multiqc/annotatepeaks.asset", "r") as f:
+	assets["annotatepeaks"]	= ""
+	for line in f.readlines():
+		assets["annotatepeaks"]	+= line
+		
