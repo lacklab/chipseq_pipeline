@@ -28,25 +28,14 @@ rule flagstat:
 		samtools flagstat {input} > {output}
 		"""
 
-rule homer_annotatepeaks:
-	input:
-		"results_{ref}/peaks/{raw}_{q}_peaks.narrowPeak"
-	output:
-		temp("qc/{ref}:{raw}_{q}.annotatepeaks.txt")
-	shell:
-		"""
-		annotatePeaks.pl {input} {ref} > {output}
-		"""
-
 from collections import Counter
-rule annotatepeaks_merge:
+rule annotatepeaks_qc:
 	input:
-		"qc/{ref}:{raw}_{q}.annotatepeaks.txt"
+		"results_{ref}/annot/{raw}_{q}.annotatepeaks.txt"
 	output:
 		"qc/{ref}:{raw}_{q}.annotatepeaks.summary_mqc.txt"
 	run:
-		header = ["intron","intergenic", "promoter-tss", "exon", "tts", "5' utr", "3' utr"]
-		with open(output, "w") as f:
+		with open(output[0], "w") as f:
 			f.write(assets["annotatepeaks"])
 			tmp = pd.read_table(input).rename(columns={tmp.columns[0]: "PeakID"})
 			tmp["shortAnn"] = tmp["Annotation"].str.split("(", expand=True)[0].str.upper()
@@ -62,7 +51,7 @@ rule frip:
 	output:
 		"qc/frip_mqc.tsv"
 	run:
-		with open(output, "w") as f:
+		with open(output[0], "w") as f:
 			f.write("# plot_type: 'generalstats'\n")
 			f.write("Sample Name\tFRiP")
 			for b, p in zip(input["BAMS"], input["PEAKS"]):

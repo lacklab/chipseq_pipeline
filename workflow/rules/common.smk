@@ -11,6 +11,7 @@ units = pd.read_table(config["UNITS"])
 units["Raw"] = units["Name"] + "_" + units["Unit"].astype(str)
 
 ref = config["REF"]["NAME"]
+q = config["OUTPUT"]["MACS_THRESHOLD"]
 # >>> utils >>>
 def get_lib(wildcards):
 	return units.loc[units["Raw"] == wildcards.raw, "Library"].unique()[0]
@@ -30,13 +31,13 @@ def get_contol(wildcards):
 
 # >>> `qc.smk` >>>
 fastqc_map = {}
-for u in units["Fastq1"].tolist() + units["Fastq2"].tolist():
+for u in units["Fastq1"].tolist() + units["Fastq2"].tolist():	
 	if (u.find("gz") != -1) or (u.find("zip") != -1):
-		fastqc_map[u.rsplit(".", 2)[0]] = u
+		fastqc_map[u.rsplit(".", 2)[0].split("/")[-1]] = u
 	elif u.find("SRR") != -1:
 		fastqc_map[u] = f"sra-data/{u}_1.fastq.gz"
 	elif u != "-":
-		fastqc_map[u.rsplit(".", 1)[0]] = u
+		fastqc_map[u.rsplit(".", 1)[0].split("/")[-1]] = u
 
 def get_fastqc(wildcards):
 	return fastqc_map[wildcards.raw]
@@ -58,23 +59,20 @@ def get_multiqc(wildcards):
 	out = []
 	for i, row in units.iterrows():
 		lib = row["Library"]
-		fq1 = row["Fastq1"]
-		fq2 = row["Fastq2"]
+		fq1 = row["Fastq1"].split("/")[-1]
+		fq2 = row["Fastq2"].split("/")[-1]
 		if fq1.find("gz") != -1:
-			fq1 = fq1.rsplit(".", 2)
-			fq2 = fq2.rsplit(".", 2)
+			fq1 = fq1.rsplit(".", 2)[0]
+			fq2 = fq2.rsplit(".", 2)[0]
 		if lib == "Single":
 			out.append(f"qc/{fq1}_fastqc.zip")
 		elif lib == "Paired":
 			out.append(f"qc/{fq1}_fastqc.zip")
 			out.append(f"qc/{fq2}_fastqc.zip")
-
 		out.append(f"qc/{ref}:{row['Raw']}.raw.bam_flagstat")
 		out.append(f"qc/{ref}:{row['Name']}.final.bam_flagstat")
-
 		out.append(f"qc/{ref}:{row['Name']}.final.bam_stats")
-
-	out.append("qc/annotatepeaks.summary_mqc.tsv")
+		out.append(f"qc/{ref}:{raw}_{q}.annotatepeaks.summary_mqc.txt")
 	out.append("qc/frip_mqc.tsv")
 	return expand(out)
 # <<< `qc.smk` <<<
@@ -158,7 +156,7 @@ if config["OUTPUT"]["RUN"]["BWS"]:
 
 # >>> Assets >>>
 assets = {}
-with open("assets/multiqc/annotatepeaks.asset", "r") as f:
+with open("assets/annotatepeaks.asset", "r") as f:
 	assets["annotatepeaks"]	= ""
 	for line in f.readlines():
 		assets["annotatepeaks"]	+= line
