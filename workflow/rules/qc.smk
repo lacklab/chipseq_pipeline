@@ -54,7 +54,8 @@ rule annotatepeaks_merge:
 			for k, v in nAnnot.items():
 				f.write(f"{k}\t{v}\n")
 
-import deeptools.countReadsPerBin as crpb			
+import deeptools.countReadsPerBin as crpb
+import pysam		
 rule frip:
 	input:
 		get_frip
