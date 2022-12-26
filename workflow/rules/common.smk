@@ -31,11 +31,11 @@ def get_contol(wildcards):
 
 # >>> `qc.smk` >>>
 fastqc_map = {}
-for u in units["Fastq1"].tolist() + units["Fastq2"].tolist():	
+for u in units["Fastq1"].tolist() + units["Fastq2"].tolist():
 	if (u.find("gz") != -1) or (u.find("zip") != -1):
 		fastqc_map[u.rsplit(".", 2)[0].split("/")[-1]] = u
 	elif u.find("SRR") != -1:
-		fastqc_map[u] = f"sra-data/{u}_1.fastq.gz"
+		fastqc_map[u+"_1"] = f"sra-data/{u}_1.fastq.gz"
 	elif u != "-":
 		fastqc_map[u.rsplit(".", 1)[0].split("/")[-1]] = u
 
@@ -48,12 +48,17 @@ def get_annotatepeaks(wildcards):
 		out.append(f"qc/{ref}:{row['Name']}.annotatePeaks.txt")
 	return expand(out)
 
-def get_frip(wildcards):
-	out = {"BAMS": [], "PEAKS": []}
+def get_frip_b(wildcards):
+	out = []
 	for i, row in samples.iterrows():
-		out["BAMS"].append(f"results_{ref}/mapping/{row['Name']}.final.bam")
-		out["PEAKS"].append(f"results_{ref}/peaks/{row['Name']}_{q}_peaks.narrowPeak")
+		out.append(f"results_{ref}/mapping/{row['Name']}.final.bam")
 	return out
+
+def get_frip_p(wildcards):
+	out = []
+	for i, row in samples.iterrows():
+		out.append(f"results_{ref}/peaks/{row['Name']}_{q}_peaks.narrowPeak")
+	return expand(out)
 
 def get_multiqc(wildcards):
 	out = []
@@ -61,18 +66,26 @@ def get_multiqc(wildcards):
 		lib = row["Library"]
 		fq1 = row["Fastq1"].split("/")[-1]
 		fq2 = row["Fastq2"].split("/")[-1]
+		if fq1.find("SRR") != -1:
+			ext1 = "_1"
+			ext2 = "_2" 
+		else:
+			ext1 = ""
+			ext2 = ""
 		if fq1.find("gz") != -1:
 			fq1 = fq1.rsplit(".", 2)[0]
 			fq2 = fq2.rsplit(".", 2)[0]
 		if lib == "Single":
-			out.append(f"qc/{fq1}_fastqc.zip")
+			out.append(f"qc/fastqc/{fq1+ext1}_fastqc.zip")
 		elif lib == "Paired":
-			out.append(f"qc/{fq1}_fastqc.zip")
-			out.append(f"qc/{fq2}_fastqc.zip")
-		out.append(f"qc/{ref}:{row['Raw']}.raw.bam_flagstat")
-		out.append(f"qc/{ref}:{row['Name']}.final.bam_flagstat")
-		out.append(f"qc/{ref}:{row['Name']}.final.bam_stats")
-		out.append(f"qc/{ref}:{raw}_{q}.annotatepeaks.summary_mqc.txt")
+			out.append(f"qc/fastqc/{fq1+ext1}_fastqc.zip")
+			out.append(f"qc/fastqc/{fq2+ext2}_fastqc.zip")
+		out.append(f"qc/flagstats/{ref}:{row['Raw']}.raw")
+		out.append(f"qc/flagstats/{ref}:{row['Name']}.final")
+		out.append(f"qc/stats/{ref}:{row['Name']}.final")
+	for i, row in samples.iterrows():
+		out.append(f"qc/annot/{ref}:{row['Name']}_{q}.summary_mqc.txt")
+		out.append(f"qc/macs/{ref}:{row['Name']}_{q}_peaks.xls")
 	out.append("qc/frip_mqc.tsv")
 	return expand(out)
 # <<< `qc.smk` <<<
@@ -142,7 +155,7 @@ if config["OUTPUT"]["RUN"]["QC"]:
 q = config['OUTPUT']['MACS_THRESHOLD']
 if config["OUTPUT"]["RUN"]["PEAKS"]:
 	outputs += [
-		f"results_{ref}/peaks/{raw}_{q}_peaks.narrowPeak"
+		f"results_{ref}/peaks/{raw}_{q}_peaks.xls"
 		for raw in samples["Name"]
 	]
 
@@ -156,7 +169,7 @@ if config["OUTPUT"]["RUN"]["BWS"]:
 
 # >>> Assets >>>
 assets = {}
-with open("assets/annotatepeaks.asset", "r") as f:
+with open("workflow/assets/annotatepeaks.asset", "r") as f:
 	assets["annotatepeaks"]	= ""
 	for line in f.readlines():
 		assets["annotatepeaks"]	+= line

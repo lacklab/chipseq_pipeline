@@ -6,6 +6,7 @@ include: "rules/sra.smk"
 include: "rules/map.smk"
 include: "rules/peak.smk"
 include: "rules/bw.smk"
+include: "rules/annot.smk"
 
 rule all:
     input:
