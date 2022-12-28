@@ -36,6 +36,7 @@ for u in units["Fastq1"].tolist() + units["Fastq2"].tolist():
 		fastqc_map[u.rsplit(".", 2)[0].split("/")[-1]] = u
 	elif u.find("SRR") != -1:
 		fastqc_map[u+"_1"] = f"sra-data/{u}_1.fastq.gz"
+		fastqc_map[u+"_2"] = f"sra-data/{u}_2.fastq.gz"
 	elif u != "-":
 		fastqc_map[u.rsplit(".", 1)[0].split("/")[-1]] = u
 
@@ -68,7 +69,8 @@ def get_multiqc(wildcards):
 		fq2 = row["Fastq2"].split("/")[-1]
 		if fq1.find("SRR") != -1:
 			ext1 = "_1"
-			ext2 = "_2" 
+			ext2 = "_2"
+			fq2 = fq1
 		else:
 			ext1 = ""
 			ext2 = ""
