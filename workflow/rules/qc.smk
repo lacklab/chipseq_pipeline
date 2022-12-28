@@ -38,6 +38,7 @@ rule macs_qc:
 		mv {input} {output}
 		"""
 
+
 from collections import Counter
 rule annotatepeaks_qc:
 	input:
@@ -51,8 +52,8 @@ rule annotatepeaks_qc:
 			tmp.rename(columns={tmp.columns[0]: "PeakID"})
 			tmp["shortAnn"] = tmp["Annotation"].str.split("(", expand=True)[0].str.upper()
 			nAnnot = Counter(tmp["shortAnn"])
-			for k, v in nAnnot.items():
-				f.write(f"{k}\t{v}\n")
+			for k in ["INTERGENIC", "INTRON ", "PROMOTER-TSS", "EXON", "3' UTR", "5' UTR", "TTS", "NON-CODING"]:
+				f.write(f"{k}\t{nAnnot[k]}\n")
 
 import deeptools.countReadsPerBin as crpb
 import pysam

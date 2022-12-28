@@ -1,4 +1,4 @@
-rule GenomeCov:
+rule genomecov:
     input:
         bam = "results_{ref}/mapping/{raw}.final.bam",
     output:
@@ -9,17 +9,14 @@ rule GenomeCov:
     threads:
         16
     run:
-        if wildcards.norm == "RPM":
-            shell("""
-            N=`samtools view -@{threads} {input.bam} | wc -l`
+        bam = pysam.AlignmentFile(input["bam"])
+        a = next(bam)
+        fl = " " if a.is_paired else f" -fs {len(a.seq)}"
+        pc = " -pc " if a.is_paired else " "
+        scale = f" -scale {10**6 / sum([(a.flag & 64) == 64 for a in bam])}" if wildcards.norm == "RPM" else " "
+        shell("""
             bedtools genomecov \
-            -scale `bc -l <<< 1000000/$N` \
-            -bg -ibam {input.bam} | sort -k1,1 -k2,2n --parallel={threads} > {output.bg}
-            bedGraphToBigWig {output.bg} {params.chrSizes} {output.bw}
-            """)
-        elif wildcards.norm == "rawcount":
-            shell("""
-            bedtools genomecov \
-            -bg -ibam {input.bam} | sort -k1,1 -k2,2n --parallel={threads} > {output.bg}
+            -bg -ibam {input.bam} {pc} {fl} {scale} \
+            | sort -k1,1 -k2,2n --parallel={threads} > {output.bg}
             bedGraphToBigWig {output.bg} {params.chrSizes} {output.bw}
             """)

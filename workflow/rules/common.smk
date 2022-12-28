@@ -169,7 +169,7 @@ if config["OUTPUT"]["RUN"]["BWS"]:
 
 # >>> Assets >>>
 assets = {}
-with open("workflow/assets/annotatepeaks.asset", "r") as f:
+with open("assets/annotatepeaks.asset", "r") as f:
 	assets["annotatepeaks"]	= ""
 	for line in f.readlines():
 		assets["annotatepeaks"]	+= line
