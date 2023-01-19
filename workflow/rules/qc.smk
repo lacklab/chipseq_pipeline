@@ -46,12 +46,16 @@ rule annotatepeaks_qc:
 	output:
 		"qc/annot/{ref}:{raw}_{q}.summary_mqc.txt"
 	run:
+		header = ["INTERGENIC", "INTRON ", "PROMOTER-TSS ", "EXON ", "3' UTR ", "5' UTR ", "TTS ", "NON-CODING "]
 		with open(output[0], "w") as f:
 			f.write(assets["annotatepeaks"])
 			tmp = pd.read_table(input[0])
-			tmp["shortAnn"] = tmp["Annotation"].str.split("(", expand=True)[0].str.upper()
-			nAnnot = Counter(tmp["shortAnn"])
-			for k in ["INTERGENIC", "INTRON ", "PROMOTER-TSS ", "EXON ", "3' UTR ", "5' UTR ", "TTS ", "NON-CODING "]:
+			if tmp.shape[0] == 0:
+				nAnnot = dict(zip(header, [8]*0))
+			else:
+				tmp["shortAnn"] = tmp["Annotation"].str.split("(", expand=True)[0].str.upper()
+				Annot = Counter(tmp["shortAnn"])
+			for k in header:
 				f.write(f"{k}\t{nAnnot[k]}\n")
 
 import deeptools.countReadsPerBin as crpb
