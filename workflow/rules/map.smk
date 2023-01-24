@@ -4,7 +4,7 @@ rule map_bwa:
     output:
         temp("results_{ref}/mapping/{raw}.raw.bam")
     params:
-        idx = config["REF"]["BWA_IDX"]
+        idx = config[f"REF_{ref}"]["BWA_IDX"]
     threads:
         32
     shell:
@@ -38,7 +38,7 @@ rule bam_filter:
     threads:
         32
     params:
-        config["REF"]["FA"],
+        config[f"REF_{ref}"]["FA"],
         get_filter_p
     shell:
         """

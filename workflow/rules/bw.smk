@@ -5,7 +5,7 @@ rule genomecov:
         bg = temp("results_{ref}/bigwig/{raw}.genomecov.{norm}.bg"),
         bw = "results_{ref}/bigwig/{raw}.genomecov.{norm}.bw"
     params:
-        chrSizes = config["REF"]["CHROM_SIZES"]
+        chrSizes = config[f"REF_{ref}"]["CHROM_SIZES"]
     threads:
         16
     run:

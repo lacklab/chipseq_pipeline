@@ -2,7 +2,7 @@ SAMPLES: config/samples.tsv
 UNITS: config/units.tsv
 
 OUTPUT:
-    # REF: hg19  # TODO:
+    REF: hg38
     RUN:
         QC: False
         PEAKS: False
@@ -13,11 +13,15 @@ OUTPUT:
     BAMPROCESS_PARAMS: -q 30
     MACS_THRESHOLD: 0.01
 
-REF:
-    NAME: hg19
+REF_hg19:
     FA: /groups/lackgrp/genomeAnnotations/hg19/hg19.fa
     BWA_IDX: /groups/lackgrp/genomeAnnotations/hg19/hg19.bwa.idx
     CHROM_SIZES: /groups/lackgrp/genomeAnnotations/hg19/hg19.chrom.sizes
+
+REF_hg38:
+    FA: /groups/lackgrp/genomeAnnotations/hg38/hg38.fa
+    BWA_IDX: /groups/lackgrp/genomeAnnotations/hg38/hg38.bwa.idx
+    CHROM_SIZES: /groups/lackgrp/genomeAnnotations/hg38/hg38.chrom.sizes
 
 CUT_ADAPTERS: True
 ADAPTER_FWD: CTGTCTCTTATA
