@@ -10,7 +10,7 @@ samples = pd.read_table(config["SAMPLES"])
 units = pd.read_table(config["UNITS"])
 units["Raw"] = units["Name"] + "_" + units["Unit"].astype(str)
 
-ref = config["RUN"]["REF"]
+ref = config["OUTPUT"]["REF"]
 q = config["OUTPUT"]["MACS_THRESHOLD"]
 # >>> utils >>>
 def get_lib(wildcards):
