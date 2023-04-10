@@ -1,14 +1,46 @@
 import pandas as pd
+import urllib.request
+import os.path
 #import yaml
 #from pathlib import Path
 #config = yaml.safe_load(Path("config/config.yaml").read_text())
 
 # `samples` includes 'IP/CONTROL' pairs 
 samples = pd.read_table(config["SAMPLES"])
+geo_samples = pd.read_table(config["GEOSAMPLES"])
 
 # `units` includes all files that need to be preprocessed
 units = pd.read_table(config["UNITS"])
 units["Raw"] = units["Name"] + "_" + units["Unit"].astype(str)
+
+
+# >>> Assets >>>
+assets = {}
+with open("assets/annotatepeaks.asset", "r") as f:
+	assets["annotatepeaks"]	= ""
+	for line in f.readlines():
+		assets["annotatepeaks"]	+= line
+		
+if not os.path.exists("experimentList.tab"):
+	urllib.request.urlretrieve("https://chip-atlas.dbcls.jp/data/metadata/experimentList.tab", "assets/experimentList.tab")
+elif config["UPDATE_CHIPATLAS"]:
+	urllib.request.urlretrieve("https://chip-atlas.dbcls.jp/data/metadata/experimentList.tab", "assets/experimentList.tab")
+
+gsm2srx = []
+srx2gsm = []
+with open("assets/experimentList.tab", "r") as f:
+    for line in f.readlines():
+        line = line.split('\t')
+        if (line[0].find("SRX") == -1) or (line[8] == '-'):
+            continue
+        
+        gsm2srx.append((line[8].split(':')[0], line[0]))
+        srx2gsm.append((line[0], line[8].split(':')[0]))
+
+assets["srx2gsm"] = dict(srx2gsm)
+assets["gsm2srx"] = dict(gsm2srx)
+# <<< Assets <<<
+
 
 ref = config["OUTPUT"]["REF"]
 q = config["OUTPUT"]["MACS_THRESHOLD"]
@@ -144,8 +176,23 @@ def get_macs_i(wildcards):
 		inputs.append(f"results_{wildcards.ref}/mapping/{input_c}.final.bam")
 	inputs.append(f"results_{wildcards.ref}/mapping/{wildcards.raw}.final.bam")
 	return inputs
-# >>> `peak.smk` functions
+# <<< `peak.smk` functions <<<
 
+
+# >>> `chipatlas.smk` functions >>>
+def get_cabeds(wildcards):
+	#gsm = units.loc[units["Name"] == wildcards.raw, "GSM"].unique()[0]
+	srx = assets["gsm2srx"][wildcards.gsm]
+	return f"results_{wildcards.ref}/cabeds/srx/{srx}.{wildcards.threshold}.bw"
+
+
+def get_cabws(wildcards):
+	#gsm = units.loc[units["Name"] == wildcards.raw, "GSM"].unique()[0]
+	srx = assets["gsm2srx"][wildcards.gsm]
+	return f"results_{wildcards.ref}/cabws/srx/{srx}.bw"
+# <<< `chipatlas.smk` functions <<<
+
+# >>> OUTPUTS >>>
 
 bwNorm = config["OUTPUT"]["BW_NORMALIZATIONS"]
 
@@ -169,10 +216,19 @@ if config["OUTPUT"]["RUN"]["BWS"]:
 	]
 
 
-# >>> Assets >>>
-assets = {}
-with open("assets/annotatepeaks.asset", "r") as f:
-	assets["annotatepeaks"]	= ""
-	for line in f.readlines():
-		assets["annotatepeaks"]	+= line
-		
+caq = config['OUTPUT']['CHIPATLASBED_THRESHOLD']
+if config["OUTPUT"]["RUN"]["CHIPATLASBED"]:
+	outputs += [
+		f"results_{ref}/cabeds/{raw}.{gsm}.{caq}.bed"
+		for raw, gsm in zip(geo_samples["Name"], geo_samples["GSM"])
+		if gsm in assets["gsm2srx"]
+	]
+
+if config["OUTPUT"]["RUN"]["CHIPATLASBIGWIG"]:
+	outputs += [
+		f"results_{ref}/cabws/{raw}.{gsm}.bw"
+		for raw, gsm in zip(geo_samples["Name"], geo_samples["GSM"])
+		if gsm in assets["gsm2srx"]
+	]
+
+# <<< OUTPUTS <<<

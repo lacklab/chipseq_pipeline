@@ -1,17 +1,21 @@
 SAMPLES: config/samples.tsv
+GEOSAMPLES: config/geo_samples.tsv
 UNITS: config/units.tsv
 
 OUTPUT:
-    REF: hg38
+    REF: hg19
     RUN:
         QC: False
         PEAKS: False
-        BWS: True
+        BWS: False
+        CHIPATLASBED: False
+        CHIPATLASBIGWIG: True
     BW_NORMALIZATIONS:
         - rawcount
         - FPM
     BAMPROCESS_PARAMS: -q 30
     MACS_THRESHOLD: 0.01
+    CHIPATLASBED_THRESHOLD: 05
 
 REF_hg19:
     FA: /groups/lackgrp/genomeAnnotations/hg19/hg19.fa
@@ -26,3 +30,5 @@ REF_hg38:
 CUT_ADAPTERS: True
 ADAPTER_FWD: CTGTCTCTTATA
 ADAPTER_REV: CTGTCTCTTATA
+
+UPDATE_CHIPATLAS: False

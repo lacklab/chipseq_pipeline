@@ -2,8 +2,10 @@
 */.snakemake
 
 config/samples.tsv
+config/geo_samples.tsv
 config/units.tsv
 
+assets/experimentList.tab
 results_*/
 sra-data/
 raw-data/
