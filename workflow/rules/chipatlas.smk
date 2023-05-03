@@ -1,6 +1,6 @@
 rule ChipAtlasBed:
     output:
-        "results_{ref}/cabeds/{srx}.{threshold}.bed"
+        "results_{ref}/cabeds/srx/{srx}.{threshold}.bed"
     threads:
         16
     shell:
@@ -20,7 +20,7 @@ rule ChipAtlasBed_link:
     input:
         get_cabeds
     output:
-        "results_{ref}/cabeds/{raw}.{gsm}.{threshold}.bw"
+        "results_{ref}/cabeds/{raw}.{gsm}.{threshold}.bed"
     shell:
         """
         ln -s `readlink -f {input}` {output}

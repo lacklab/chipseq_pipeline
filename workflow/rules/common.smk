@@ -183,7 +183,7 @@ def get_macs_i(wildcards):
 def get_cabeds(wildcards):
 	#gsm = units.loc[units["Name"] == wildcards.raw, "GSM"].unique()[0]
 	srx = assets["gsm2srx"][wildcards.gsm]
-	return f"results_{wildcards.ref}/cabeds/srx/{srx}.{wildcards.threshold}.bw"
+	return f"results_{wildcards.ref}/cabeds/srx/{srx}.{wildcards.threshold}.bed"
 
 
 def get_cabws(wildcards):

@@ -8,14 +8,14 @@ OUTPUT:
         QC: False
         PEAKS: False
         BWS: False
-        CHIPATLASBED: False
+        CHIPATLASBED: True
         CHIPATLASBIGWIG: True
     BW_NORMALIZATIONS:
         - rawcount
         - FPM
     BAMPROCESS_PARAMS: -q 30
     MACS_THRESHOLD: 0.01
-    CHIPATLASBED_THRESHOLD: 05
+    CHIPATLASBED_THRESHOLD: '05'
 
 REF_hg19:
     FA: /groups/lackgrp/genomeAnnotations/hg19/hg19.fa
