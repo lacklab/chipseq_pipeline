@@ -54,12 +54,11 @@ rule annotatepeaks_qc:
 				nAnnot = dict(zip(header, [8]*0))
 			else:
 				tmp["shortAnn"] = tmp["Annotation"].str.split("(", expand=True)[0].str.upper()
-				Annot = Counter(tmp["shortAnn"])
+				nAnnot = Counter(tmp["shortAnn"])
 			for k in header:
 				f.write(f"{k}\t{nAnnot[k]}\n")
 
-import deeptools.countReadsPerBin as crpb
-import pysam
+
 rule frip:
 	input:
 		bams=get_frip_b,
@@ -67,6 +66,8 @@ rule frip:
 	output:
 		"qc/frip_mqc.tsv"
 	run:
+		import deeptools.countReadsPerBin as crpb
+		import pysam
 		with open(output[0], "w") as f:
 			f.write("# plot_type: 'generalstats'\n")
 			f.write("Sample Name\tFRiP\n")

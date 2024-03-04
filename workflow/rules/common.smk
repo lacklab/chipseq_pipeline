@@ -7,7 +7,8 @@ import os.path
 
 # `samples` includes 'IP/CONTROL' pairs 
 samples = pd.read_table(config["SAMPLES"])
-geo_samples = pd.read_table(config["GEOSAMPLES"])
+if config['OUTPUT']['RUN']['CHIPATLASBED'] or config['OUTPUT']['RUN']['CHIPATLASBIGWIG']:
+	geo_samples = pd.read_table(config["GEOSAMPLES"])
 
 # `units` includes all files that need to be preprocessed
 units = pd.read_table(config["UNITS"])
@@ -31,6 +32,8 @@ srx2gsm = []
 with open("assets/experimentList.tab", "r") as f:
     for line in f.readlines():
         line = line.split('\t')
+        if len(line) < 9:
+            print(line)
         if (line[0].find("SRX") == -1) or (line[8] == '-'):
             continue
         

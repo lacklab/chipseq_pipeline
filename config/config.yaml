@@ -3,13 +3,13 @@ GEOSAMPLES: config/geo_samples.tsv
 UNITS: config/units.tsv
 
 OUTPUT:
-    REF: hg19
+    REF: hg38
     RUN:
         QC: False
-        PEAKS: False
-        BWS: False
-        CHIPATLASBED: True
-        CHIPATLASBIGWIG: True
+        PEAKS: True
+        BWS: True
+        CHIPATLASBED: False
+        CHIPATLASBIGWIG: False
     BW_NORMALIZATIONS:
         - rawcount
         - FPM
