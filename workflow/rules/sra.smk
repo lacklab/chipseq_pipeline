@@ -15,7 +15,7 @@ rule parallel_fastq_dump:
     threads:
         64
     run:
-        lib = units.loc[units["Fastq1"] == wildcards.srr, "Library"].unique()[0]
+        lib = samples.loc[samples["Fastq1"] == wildcards.srr, "Library"].unique()[0]
         if lib == "Single":
             shell("""
             parallel-fastq-dump -t {threads} --split-files --gzip -s {input} -O sra-data

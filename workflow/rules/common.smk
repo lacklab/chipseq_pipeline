@@ -6,13 +6,21 @@ import os.path
 #config = yaml.safe_load(Path("config/config.yaml").read_text())
 
 # `samples` includes 'IP/CONTROL' pairs 
+
+
 samples = pd.read_table(config["SAMPLES"])
-if config['OUTPUT']['RUN']['CHIPATLASBED'] or config['OUTPUT']['RUN']['CHIPATLASBIGWIG']:
-	geo_samples = pd.read_table(config["GEOSAMPLES"])
+samples["Raw"] = samples["Name"] + "_" + samples["Unit"].astype(str)
+
+#samples = samples.loc[:26,:]
+
+
+#samples = pd.read_table(config["SAMPLES"])
+#if config['OUTPUT']['RUN']['CHIPATLASBED'] or config['OUTPUT']['RUN']['CHIPATLASBIGWIG']:
+#	geo_samples = pd.read_table(config["GEOSAMPLES"])
 
 # `units` includes all files that need to be preprocessed
-units = pd.read_table(config["UNITS"])
-units["Raw"] = units["Name"] + "_" + units["Unit"].astype(str)
+#units = pd.read_table(config["UNITS"])
+#units["Raw"] = units["Name"] + "_" + units["Unit"].astype(str)
 
 
 # >>> Assets >>>
@@ -49,16 +57,16 @@ ref = config["OUTPUT"]["REF"]
 q = config["OUTPUT"]["MACS_THRESHOLD"]
 # >>> utils >>>
 def get_lib(wildcards):
-	return units.loc[units["Raw"] == wildcards.raw, "Library"].unique()[0]
+	return samples.loc[samples["Raw"] == wildcards.raw, "Library"].unique()[0]
 
 def get_units(wildcards):
-	return units.loc[units["Name"] == wildcards.raw, "Raw"].unique()
+	return samples.loc[samples["Name"] == wildcards.raw, "Raw"].unique()
 
 def get_fq1(wildcards):
-	return units.loc[units["Raw"] == wildcards.raw, "Fastq1"].unique()[0]
+	return samples.loc[samples["Raw"] == wildcards.raw, "Fastq1"].unique()[0]
 
 def get_fq2(wildcards):
-	return units.loc[units["Raw"] == wildcards.raw, "Fastq2"].unique()[0]
+	return samples.loc[samples["Raw"] == wildcards.raw, "Fastq2"].unique()[0]
 
 def get_contol(wildcards):
 	return samples.loc[samples["Name"] == wildcards.raw, "Control"].unique()[0]
@@ -66,7 +74,7 @@ def get_contol(wildcards):
 
 # >>> `qc.smk` >>>
 fastqc_map = {}
-for u in units["Fastq1"].tolist() + units["Fastq2"].tolist():
+for u in samples["Fastq1"].tolist() + samples["Fastq2"].tolist():
 	if (u.find("gz") != -1) or (u.find("zip") != -1):
 		fastqc_map[u.rsplit(".", 2)[0].split("/")[-1]] = u
 	elif u.find("SRR") != -1:
@@ -81,24 +89,24 @@ def get_fastqc(wildcards):
 def get_annotatepeaks(wildcards):
 	out = []
 	for i, row in samples.iterrows():
-		out.append(f"qc/{ref}:{row['Name']}.annotatePeaks.txt")
+		out = list(set(out.append(f"qc/{ref}:{row['Name']}.annotatePeaks.txt")))
 	return expand(out)
 
 def get_frip_b(wildcards):
 	out = []
 	for i, row in samples.iterrows():
-		out.append(f"results_{ref}/mapping/{row['Name']}.final.bam")
+		out = list(set(out.append(f"results_{ref}/mapping/{row['Name']}.final.bam")))
 	return out
 
 def get_frip_p(wildcards):
 	out = []
 	for i, row in samples.iterrows():
-		out.append(f"results_{ref}/peaks/{row['Name']}_{q}_peaks.narrowPeak")
+		out = list(set(out.append(f"results_{ref}/peaks/{row['Name']}_{q}_peaks.narrowPeak")))
 	return expand(out)
 
 def get_multiqc(wildcards):
 	out = []
-	for i, row in units.iterrows():
+	for i, row in samples.iterrows():
 		lib = row["Library"]
 		fq1 = row["Fastq1"].split("/")[-1]
 		fq2 = row["Fastq2"].split("/")[-1]
@@ -129,8 +137,18 @@ def get_multiqc(wildcards):
 
 # >>> `map.smk` functions >>>
 def get_fqs(wildcards):
-	name, unit = wildcards.raw.rsplit("_",1)
-	fq1 = units.loc[units["Name"] == name,"Fastq1"].unique()[0]
+	#check_out = checkpoints.parallel_fastq_dump.get(**wildcards).output
+#
+	#srr = wildcards.srr
+#
+#
+	#name = samples['Name']
+	#unit = samples['Unit']
+
+
+
+	#name, unit = wildcards.raw.rsplit("_",1)
+	fq1 = samples.loc[samples["Raw"] == wildcards.raw,"Fastq1"].unique()[0]
 	source = str(fq1).find("SRR") != -1
 	lib = get_lib(wildcards)
 	if source:
@@ -161,9 +179,9 @@ def get_reps(wildcards):
 
 # >>> `peak.smk` functions >>>
 def get_macs_p(wildcards):
-	lib = units.loc[units["Name"] == wildcards.raw, "Library"].unique()[0]
+	lib = samples.loc[samples["Name"] == wildcards.raw, "Library"].unique()[0]
 	input_c = get_contol(wildcards)
-	param = f"-t results_{wildcards.ref}/mapping/{wildcards.raw}.final.bam "
+	param = f"-t results_{wildcards.ref}/mapping/{wildcards.raw}.{wildcards.p}.bam "
 	if not input_c == "-":
 		param += f" -c results_{wildcards.ref}/mapping/{input_c}.final.bam "
 	if lib == "Single":
@@ -177,8 +195,21 @@ def get_macs_i(wildcards):
 	input_c = get_contol(wildcards)
 	if not input_c == "-":
 		inputs.append(f"results_{wildcards.ref}/mapping/{input_c}.final.bam")
-	inputs.append(f"results_{wildcards.ref}/mapping/{wildcards.raw}.final.bam")
+	inputs.append(f"results_{wildcards.ref}/mapping/{wildcards.raw}.{wildcards.p}.bam")
 	return inputs
+
+def get_idr_i(wildcards):
+		qm = config['OUTPUT']['MACS_THRESHOLD']
+		#qi = config['OUTPUT']['IDR_THRESHOLD']
+		return {
+			'pr1' : f"results_{wildcards.ref}/peaks/{wildcards.raw}_pr1_{qm}_peaks.narrowPeak",
+        	'pr2' : f"results_{wildcards.ref}/peaks/{wildcards.raw}_pr2_{qm}_peaks.narrowPeak",
+        	'final' : f"results_{wildcards.ref}/peaks/{wildcards.raw}_final_{qm}_peaks.narrowPeak"
+			}
+
+
+
+
 # <<< `peak.smk` functions <<<
 
 
@@ -204,11 +235,12 @@ outputs = []
 if config["OUTPUT"]["RUN"]["QC"]:
 	outputs += ["qc/multiqc_report.html"]
 
-q = config['OUTPUT']['MACS_THRESHOLD']
+qi = config['OUTPUT']['IDR_THRESHOLD']
 if config["OUTPUT"]["RUN"]["PEAKS"]:
 	outputs += [
-		f"results_{ref}/peaks/{raw}_{q}_peaks.xls"
+		f"results_{ref}/idr/{raw}_{qi}_idr.narrowPeak"
 		for raw in samples["Name"]
+		if raw.find('input') == -1
 	]
 
 if config["OUTPUT"]["RUN"]["BWS"]:
@@ -218,19 +250,21 @@ if config["OUTPUT"]["RUN"]["BWS"]:
 		for norm in bwNorm
 	]
 
-
+gsm2n = dict(zip(samples['GSM'], samples['Name']))
 caq = config['OUTPUT']['CHIPATLASBED_THRESHOLD']
 if config["OUTPUT"]["RUN"]["CHIPATLASBED"]:
 	outputs += [
-		f"results_{ref}/cabeds/{raw}.{gsm}.{caq}.bed"
-		for raw, gsm in zip(geo_samples["Name"], geo_samples["GSM"])
+		f"results_{ref}/cabeds/{gsm2n[gsm]}.{gsm}.{caq}.bed"
+		for gsm in samples["GSM"].unique()
 		if gsm in assets["gsm2srx"]
 	]
 
+samples["GSM"].unique()
+
 if config["OUTPUT"]["RUN"]["CHIPATLASBIGWIG"]:
 	outputs += [
-		f"results_{ref}/cabws/{raw}.{gsm}.bw"
-		for raw, gsm in zip(geo_samples["Name"], geo_samples["GSM"])
+		f"results_{ref}/cabws/{gsm2n[gsm]}.{gsm}.bw"
+		for gsm in samples["GSM"].unique()
 		if gsm in assets["gsm2srx"]
 	]
 

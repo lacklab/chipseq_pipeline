@@ -38,13 +38,17 @@ rule bam_filter:
     threads:
         32
     params:
-        config[f"REF_{ref}"]["FA"],
-        get_filter_p
+        fa = config[f"REF_{ref}"]["FA"],
+        p = get_filter_p,
+        bl = config[f"REF_{ref}"]["BLACKLIST"]
     shell:
         """
         samtools view {input} | egrep -v "chrM" | \
-        samtools view -b -@ {threads} -T {params} > {output}
+        samtools view -b -@ {threads} -T {params.fa} {params.p} | \
+        bedtools intersect -nonamecheck -v -abam stdin -b {params.bl} > {output}
         """
+
+# PICARD ?
 
 rule bam_merge:
 	input:
@@ -56,11 +60,27 @@ rule bam_merge:
 	run:
 		if str(input).find(' ') != -1:
 			shell("""
-		    samtools merge -@ {threads} -o {output} {input}
-		    samtools index {output}
+            samtools merge -@ {threads} -o {output} {input} 
+            samtools index {output}
 			""")
 		else:
 			shell("""
 		    mv {input} {output}
 		    samtools index {output}
 			""")
+
+
+rule pseudoreps:
+    input:
+        "results_{ref}/mapping/{raw}.final.bam"
+    output:
+        pr1 = "results_{ref}/mapping/{raw}.pr1.bam",
+        pr2 = "results_{ref}/mapping/{raw}.pr2.bam"
+    shell:
+        """
+        samtools index {input}
+        samtools view -b --subsample 0.5 {input} > {output.pr1}
+        samtools view -b --subsample 0.5 {input} > {output.pr2}
+        """
+
+
