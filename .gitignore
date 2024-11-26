@@ -11,3 +11,5 @@ sra-data/
 raw-data/
 logs/
 qc/
+
+slurm-*
