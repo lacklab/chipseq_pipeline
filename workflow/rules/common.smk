@@ -1,6 +1,7 @@
 import pandas as pd
 import urllib.request
 import os.path
+import pysam
 #import yaml
 #from pathlib import Path
 #config = yaml.safe_load(Path("config/config.yaml").read_text())
@@ -30,7 +31,7 @@ with open("assets/annotatepeaks.asset", "r") as f:
 	for line in f.readlines():
 		assets["annotatepeaks"]	+= line
 		
-if not os.path.exists("experimentList.tab"):
+if not os.path.exists("assets/experimentList.tab"):
 	urllib.request.urlretrieve("https://chip-atlas.dbcls.jp/data/metadata/experimentList.tab", "assets/experimentList.tab")
 elif config["UPDATE_CHIPATLAS"]:
 	urllib.request.urlretrieve("https://chip-atlas.dbcls.jp/data/metadata/experimentList.tab", "assets/experimentList.tab")
@@ -150,6 +151,7 @@ def get_fqs(wildcards):
 	#name, unit = wildcards.raw.rsplit("_",1)
 	fq1 = samples.loc[samples["Raw"] == wildcards.raw,"Fastq1"].unique()[0]
 	source = str(fq1).find("SRR") != -1
+	print(source, 'hey')
 	lib = get_lib(wildcards)
 	if source:
 		srr = fq1

@@ -8,7 +8,7 @@ cluster:
     --output=logs/{rule}/{rule}-{wildcards}-%j.out
 default-resources:
   - partition=normal,big-mem,long,express
-  - mem_mb=700000
+  - mem_mb_per_cpu=10000
   - disk_mb=1024000
 restart-times: 1
 max-jobs-per-second: 10

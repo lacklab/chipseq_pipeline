@@ -7,7 +7,7 @@ OUTPUT:
     RUN:
         QC: False
         PEAKS: True
-        BWS: False
+        BWS: True
         CHIPATLASBED: False
         CHIPATLASBIGWIG: False
     BW_NORMALIZATIONS:
