@@ -1,27 +1,31 @@
+# Rule: Map reads to the reference genome using BWA
+
 rule map_bwa:
     input:
-        get_fqs
+        get_fqs  # Function to fetch FASTQ files for mapping
     output:
-        temp("results_{ref}/mapping/{raw}.raw.bam")
+        raw=temp("results_{ref}/mapping/{raw}.raw.bam"),  # Temporary raw BAM file
+        log="qc/bwa/{ref}:{raw}.bwa.log"
     params:
-        idx = config[f"REF_{ref}"]["BWA_IDX"]
+        idx = lambda wildcards: references[wildcards.ref]["BWA_IDX"]  # Path to BWA index
     threads:
-        32
+        16  # Number of threads to use
     shell:
         """
-        bwa mem -t {threads} {params.idx} {input} \
-        | samtools view -bS - > {output}
+        bwa mem -t {threads} {params.idx} {input} 2> {output.log} \
+        | samtools view -bS - > {output.raw}
         """
 
+# Rule: Process BAM file (coordinate sorting, fixing mates, marking duplicates)
 rule bam_process:
     input:
-        "results_{ref}/mapping/{raw}.raw.bam"
+        "results_{ref}/mapping/{raw}.raw.bam"  # Raw BAM file from mapping
     output:
-        temp("results_{ref}/mapping/{raw}.coorsorted.bam")
-    threads:
-        32
+        temp("results_{ref}/mapping/{raw}.coorsorted.bam")  # Coordinate-sorted BAM file
     params:
-        config["OUTPUT"]["BAMPROCESS_PARAMS"]
+        config["OUTPUT"]["BAMPROCESS_PARAMS"]  # Parameters for BAM processing
+    threads:
+        16
     shell:
         """
         samtools view -h {params} {input} \
@@ -30,57 +34,56 @@ rule bam_process:
         | samtools markdup -@ {threads} - {output}
         """
 
+# Rule: Filter BAM file (remove mitochondrial reads, apply blacklist, etc.)
 rule bam_filter:
     input:
-        "results_{ref}/mapping/{raw}.coorsorted.bam"
+        "results_{ref}/mapping/{raw}.coorsorted.bam"  # Coordinate-sorted BAM file
     output:
-        temp("results_{ref}/mapping/{raw}.filtered.bam")
-    threads:
-        32
+        temp("results_{ref}/mapping/{raw}.filtered.bam")  # Filtered BAM file
     params:
-        fa = config[f"REF_{ref}"]["FA"],
-        p = get_filter_p,
-        bl = config[f"REF_{ref}"]["BLACKLIST"]
+        fa = lambda wildcards: references[wildcards.ref]["FA"],  # Reference genome FASTA
+        p  = lambda wildcards: "-F 3852 -f 2" if get_lib(wildcards) == "Paired" else "-F 3852",  # Filtering parameters (e.g., flags)
+        bl = lambda wildcards: references[wildcards.ref]["BLACKLIST"]  # Path to blacklist file
+    threads:
+        16
     shell:
         """
-        samtools view {input} | egrep -v "chrM" | \
-        samtools view -b -@ {threads} -T {params.fa} {params.p} | \
-        bedtools intersect -nonamecheck -v -abam stdin -b {params.bl} > {output}
+        samtools view {input} | egrep -v "chrM" \
+        | samtools view -b -@ {threads} -T {params.fa} {params.p} \
+        | bedtools intersect -nonamecheck -v -abam stdin -b {params.bl} > {output}
         """
 
-# PICARD ?
-
+# Rule: Merge replicates into a final BAM file
 rule bam_merge:
-	input:
-		get_reps
-	output:
-		"results_{ref}/mapping/{raw}.final.bam"
-	threads:
-		32
-	run:
-		if str(input).find(' ') != -1:
-			shell("""
-            samtools merge -@ {threads} -o {output} {input} 
-            samtools index {output}
-			""")
-		else:
-			shell("""
-		    mv {input} {output}
-		    samtools index {output}
-			""")
+    input:
+        get_units
+    output:
+        "results_{ref}/mapping/{name}.final.bam"  # Final merged BAM file
+    threads:
+        16
+    run:
+        if str(input).find(' ') != -1:  # If multiple input BAM files are present
+            shell("""
+                samtools merge -@ {threads} -o {output} {input}
+                samtools index {output}
+            """)
+        else:  # If only a single BAM file
+            shell("""
+                mv {input} {output}
+                samtools index {output}
+            """)
 
-
+# Rule: Create pseudoreplicates from the final BAM file
+# Will be deparcated!
 rule pseudoreps:
     input:
-        "results_{ref}/mapping/{raw}.final.bam"
+        "results_{ref}/mapping/{name}.final.bam"  # Final BAM file
     output:
-        pr1 = "results_{ref}/mapping/{raw}.pr1.bam",
-        pr2 = "results_{ref}/mapping/{raw}.pr2.bam"
+        pr1 = "results_{ref}/mapping/{name}.pr1.bam",  # First pseudoreplicate
+        pr2 = "results_{ref}/mapping/{name}.pr2.bam"   # Second pseudoreplicate
     shell:
         """
         samtools index {input}
         samtools view -b --subsample 0.5 {input} > {output.pr1}
         samtools view -b --subsample 0.5 {input} > {output.pr2}
         """
-
-

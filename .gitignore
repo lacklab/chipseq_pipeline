@@ -6,10 +6,13 @@ config/geo_samples.tsv
 config/units.tsv
 
 assets/experimentList.tab
-results_*/
+logs/
 sra-data/
 raw-data/
-logs/
+link/
+trimmed/
+results_*/
 qc/
+
 
 slurm-*
