@@ -44,13 +44,15 @@ rule trim_adapters:
 
                 trim_galore --fastqc --cores {threads} --gzip {input.link_fq1}
 
-                mv {wildcards.raw}_val_1.fq.gz {output.trimmed_fq1}
-                mv {wildcards.raw}_val_1_fastqc.html {output.t1fastqc}
-                mv {wildcards.raw}.fastq.gz_trimming_report.txt {output.t1report}
+                mv {wildcards.raw}_1_trimmed.fq.gz {output.trimmed_fq1}
+                mv {wildcards.raw}_1_trimmed_fastqc.html {output.t1fastqc}
+                mv {wildcards.raw}_1_trimmed_fastqc.zip {output.t1fastqc_z}
+                mv {wildcards.raw}_1.fastq.gz_trimming_report.txt {output.t1report}
 
                 touch {output.trimmed_fq2}  # Placeholder for single-end
                 touch {output.fastqc2}
                 touch {output.t2fastqc}
+                touch {output.t2fastqc_z}
                 touch {output.t2report}
             """)
         elif lib == "Paired":

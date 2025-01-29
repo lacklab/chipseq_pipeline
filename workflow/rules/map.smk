@@ -2,7 +2,8 @@
 
 rule map_bwa:
     input:
-        get_fqs  # Function to fetch FASTQ files for mapping
+        trimmed_fq1="trimmed/{raw}_1.trimmed.fastq.gz",
+        trimmed_fq2="trimmed/{raw}_2.trimmed.fastq.gz"
     output:
         raw=temp("results_{ref}/mapping/{raw}.raw.bam"),  # Temporary raw BAM file
         log="qc/bwa/{ref}:{raw}.bwa.log"
@@ -10,11 +11,18 @@ rule map_bwa:
         idx = lambda wildcards: references[wildcards.ref]["BWA_IDX"]  # Path to BWA index
     threads:
         16  # Number of threads to use
-    shell:
-        """
-        bwa mem -t {threads} {params.idx} {input} 2> {output.log} \
-        | samtools view -bS - > {output.raw}
-        """
+    run:
+        lib = get_lib(wildcards)
+        if lib == "Single":
+            shell("""
+                bwa mem -t {threads} {params.idx} {input.trimmed_fq1} 2> {output.log} \
+                | samtools view -bS - > {output.raw}
+                """)
+        elif lib == "Paired":
+            shell("""
+                bwa mem -t {threads} {params.idx} {input} 2> {output.log} \
+                | samtools view -bS - > {output.raw}
+            """)
 
 # Rule: Process BAM file (coordinate sorting, fixing mates, marking duplicates)
 rule bam_process:

@@ -112,7 +112,7 @@ def get_multiqc(wildcards):
                 raw = row['Raw']
                 name = row['Name']
 
-                is_control = row['Control'] == '-'
+                is_control = name in controls
                 
                 # Generate output paths for each tool and file pattern
                 for tool, patterns in qc_tools_1.items():
@@ -137,7 +137,7 @@ def get_fqs(wildcards):
     fq1 = get_fastq(wildcards, "Fastq1")
     lib = get_lib(wildcards)
     if "SRR" in fq1:
-        return (f"sra-data/{fq1}_1.fastq.gz", f"sra-data/{fq1}_2.fastq.gz") if lib == "Paired" else f"sra-data/{fq1}_1.fastq.gz"
+        return (f"{os.getcwd()}sra-data/{fq1}_1.fastq.gz", f"{os.getcwd()}/sra-data/{fq1}_2.fastq.gz") if lib == "Paired" else f"{os.getcwd()}/sra-data/{fq1}_1.fastq.gz"
     fq2 = get_fastq(wildcards, "Fastq2")
     return (fq1, fq2) if lib == "Paired" else fq1
 
@@ -163,6 +163,8 @@ def get_macs_p(wildcards):
 bwNorm = config["OUTPUT"]["BW_NORMALIZATIONS"]
 outputs = []
 
+controls = samples['Control'].unique()
+
 if config["OUTPUT"]["RUN"]["QC"]:
     outputs.append("qc/multiqc_report.html")
 
@@ -172,7 +174,7 @@ if config["OUTPUT"]["RUN"]["PEAKS"]:
         for ref in config['OUTPUT']['REF']
         for q in config['OUTPUT']['MACS_THRESHOLD']
         for i, row in samples.iterrows()
-		if row['Control'] != '-'
+		if row['Name'] not in controls
 
     ]
 
