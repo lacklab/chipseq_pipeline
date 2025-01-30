@@ -1,7 +1,6 @@
 import os
 import urllib.request
 import pandas as pd
-import pysam
 
 # Load configuration and samples
 # Uncomment and use if `yaml` and `Path` are available

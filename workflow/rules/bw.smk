@@ -1,36 +1,24 @@
-# Rule: Generate genome coverage tracks in BedGraph and BigWig formats
 rule genomecov:
     input:
-        bam = "results_{ref}/mapping/{name}.final.bam"  # Input final BAM file
+        bam = "results_{ref}/mapping/{name}.final.bam"
     output:
-        bg = temp("results_{ref}/bigwig/{name}.genomecov.{norm}.bg"),  # Temporary BedGraph file
-        bw = "results_{ref}/bigwig/{name}.genomecov.{norm}.bw"  # Output BigWig file
+        bg = temp("results_{ref}/bigwig/{name}.genomecov.{norm}.bg"),
+        bw = "results_{ref}/bigwig/{name}.genomecov.{norm}.bw",
+        params_file = temp("results_{ref}/bigwig/{name}.params.{norm}.txt")  # Stores BAM parameters
     params:
-        chrSizes = lambda wildcards: references[wildcards.ref]["CHROM_SIZES"]  # Path to chromosome sizes file
+        chrSizes = lambda wildcards: references[wildcards.ref]["CHROM_SIZES"]
     threads:
-        4  # Number of threads to use
-    run:
-        # Open the BAM file to determine read type (paired or single-end) and calculate scaling
-        bam = pysam.AlignmentFile(input["bam"])
-        first_read = next(bam)
-        if first_read.is_paired:
-            # Paired-end read parameters
-            pc = " -pc "  # Use proper pairs
-            fl = " "  # No fragment size adjustment for paired-end
-            scale = (f" -scale {10**6 / sum([(r.flag & 64) == 64 for r in bam])}"
-                     if wildcards.norm == "FPM" else " ")  # Scale by FPM if required
-        else:
-            # Single-end read parameters
-            pc = " "  # No proper pairs for single-end
-            fl = f" -fs {len(first_read.seq)}"  # Set fragment size to read length
-            scale = f" -scale {10**6 / bam.mapped}" if wildcards.norm == "FPM" else " "  # Scale by FPM if required
-        bam.close()
+        4
+    conda:
+        "../envs/bedtools.yaml"
+    shell:
+        """
+        # Run the Python script to determine BAM processing parameters
+        python workflow/scripts/determine_bam_params.py --bam {input.bam} --norm {wildcards.norm} --output {output.params_file}
 
         # Generate genome coverage tracks
-        shell("""
-            bedtools genomecov \
-            -bg -ibam {input.bam} {pc} {fl} {scale} | \
-            sort -k1,1 -k2,2n --parallel={threads} > {output.bg}
-            
-            bedGraphToBigWig {output.bg} {params.chrSizes} {output.bw}
-        """)
+        bedtools genomecov -bg -ibam {input.bam} $(cat {output.params_file}) | \
+        sort -k1,1 -k2,2n --parallel={threads} > {output.bg}
+        
+        bedGraphToBigWig {output.bg} {params.chrSizes} {output.bw}
+        """

@@ -1,12 +1,25 @@
-# Rule: Annotate peaks using HOMER's annotatePeaks.pl
-rule homer_annotatepeaks:
-    input:
-        # Input narrowPeak file
-        "results_{ref}/peaks/{name}_{q}_peaks.narrowPeak"
+rule homer_configure:
     output:
-        # Output annotated peaks file
-        "results_{ref}/annot/{name}_{q}_annotatepeaks.txt"
+        "results_{ref}/.homer_{ref}"
+    params:
+        genome=lambda wildcards: wildcards.ref
+    conda:
+        "../envs/homer.yaml"
     shell:
         """
-        annotatePeaks.pl {input} {wildcards.ref} > {output}
+        perl $CONDA_PREFIX/share/homer/configureHomer.pl -install {params.genome}
+        touch {output}
+        """
+
+rule homer_annotatepeaks:
+    input:
+        peaks = "results_{ref}/peaks/{name}_{q}_peaks.narrowPeak",
+        prereq = "results_{ref}/.homer_{ref}"
+    output:
+        "results_{ref}/annot/{name}_{q}_annotatepeaks.txt"
+    conda:
+        "../envs/homer.yaml"
+    shell:
+        """
+        annotatePeaks.pl {input.peaks} {wildcards.ref} > {output}
         """

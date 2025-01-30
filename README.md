@@ -63,7 +63,7 @@ Centralized quality control report using MultiQC, including:
 - `pandas`
 - `pysam`
 
-**Ensure all tools are properly installed and available in your system path.**
+**You don't need to install these individually. As long as you have Python, Snakemake and conda in your path, new environments will be created.**
 
 ---
 
@@ -82,6 +82,8 @@ Centralized quality control report using MultiQC, including:
 │   ├── config.yaml         # Configuration file for the cluster setup
 ├── qc/                     # QC reporting
 ├── workflow/                 
+│   ├── envs/              # Conda environment files
+│   ├── scripts/              # Scripts used in rules
 │   ├── rules/              # Snakemake rules for each step
 │   │   ├── annot.smk
 │   │   ├── bw.smk
@@ -94,9 +96,9 @@ Centralized quality control report using MultiQC, including:
 │   │   ├── sra.smk
 │   │   └── trim.smk
 │   └── Snakefile           # Main entry point for the pipeline
-├── raw-data/               # Raw sequencing data files (not included)
-├── sra-data/               # Raw sequencing data files from SRA (not included)
-├── results_{ref}/          # Output results directory
+├── raw-data/               # Raw sequencing data files (not includ
+├── sra-data/               # Raw sequencing data files from SRA (not includ
+├── results_{ref}/          # Output results direct
 ├── trimmed/                # Trimmed reads directory
 └── run_snakemake.sh        # Script to run the pipeline
 ```
