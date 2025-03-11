@@ -5,8 +5,8 @@ default-resources:
   mem_mb: None
   disk_mb: 1024000
   runtime: 600
-#restart-times: 1
-max-jobs-per-second: 30
+restart-times: 1
+max-jobs-per-second: 10
 max-status-checks-per-second: 1
 local-cores: 1
 latency-wait: 60

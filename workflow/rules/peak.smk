@@ -10,6 +10,8 @@ rule macs:
         4  # Number of threads to use
     params:
         get_macs_p  # Function to retrieve MACS parameters
+    conda:
+        "../envs/macs3.yaml"
     shell:
         """
         macs3 callpeak \
@@ -20,7 +22,7 @@ rule macs:
         """
 
 # Rule: Perform IDR (Irreproducible Discovery Rate) analysis
-# DEPARCATED
+# DEPRACATED
 #rule idr:
 #    input:
 #        unpack(get_idr_i)  # Unpack pseudoreplicates and final peak files

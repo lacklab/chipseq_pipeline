@@ -6,6 +6,8 @@ rule stats:
         "qc/samtools/stats/{ref}:{raw}.stats"  # Output stats file
     params:
         fa = lambda wildcards: references[wildcards.ref]["FA"]  # Reference genome path
+    conda:
+        "../envs/qc.yaml"
     shell:
         """
         samtools stats --reference {params.fa} {input} > {output}
@@ -17,6 +19,8 @@ rule flagstat:
         "results_{ref}/mapping/{raw}.bam"  # Input BAM file
     output:
         "qc/samtools/flagstat/{ref}:{raw}.flagstat"  # Output flagstat file
+    conda:
+        "../envs/qc.yaml"
     shell:
         """
         samtools flagstat {input} > {output}
@@ -28,6 +32,8 @@ rule idxstats:
         "results_{ref}/mapping/{raw}.bam"  # Input BAM file
     output:
         "qc/samtools/idxstats/{ref}:{raw}.idxstats"  # Output idxstats file
+    conda:
+        "../envs/qc.yaml"
     shell:
         """
         samtools idxstats {input} > {output}
@@ -39,6 +45,8 @@ rule macs_qc:
         "results_{ref}/peaks/{name}_{q}_peaks.xls"  # Input MACS2 peaks file
     output:
         "qc/macs/{ref}:{name}_{q}_peaks.xls"  # QC directory for MACS2 peaks file
+    conda:
+        "../envs/qc.yaml"
     shell:
         """
         ln -s $(readlink -f {input}) $(readlink -f {output})
@@ -82,44 +90,15 @@ rule frip:
         )
     output:
         "qc/{ref}:frip_mqc.tsv"
-    run:
-        import deeptools.countReadsPerBin as crpb
-        import pysam
-        import numpy as np
-
-        # Prepare the MultiQC-compatible header
-        with open(output[0], "w") as f:
-            f.write("# plot_type: 'generalstats'\n")
-            f.write("Sample Name\tFRiP\tNumber of Peaks\tMedian Fragment Length\n")
-
-            # Loop through BAM and Peak pairs
-            for b, p in zip(input.bams, input.peak):
-                
-                # Calculate FRIP using deepTools
-                cr = crpb.CountReadsPerBin([b], bedFile=[p], numberOfProcessors=10)
-                reads_at_peaks = cr.run()
-                total_reads_at_peaks = reads_at_peaks.sum(axis=0)
-
-                # Calculate total mapped reads using pysam
-                bam = pysam.AlignmentFile(b)
-                total_mapped_reads = bam.mapped
-
-                # Calculate number of peaks
-                with open(p, 'r') as peak_file:
-                    num_peaks = sum(1 for _ in peak_file)
-
-                # Calculate median fragment length using pysam
-                fragment_lengths = [
-                    abs(read.template_length) for read in bam.fetch() if read.is_proper_pair
-                ]
-                median_fragment_length = np.median(fragment_lengths)
-
-                # Calculate FRIP score
-                sample_name = p.split("/")[-1].split("_peaks")[0]
-                frip_score = float(total_reads_at_peaks[0]) / total_mapped_reads
-
-                # Write results into a MultiQC-compatible TSV file
-                f.write(f"{sample_name}\t{frip_score:.4f}\t{num_peaks}\t{median_fragment_length:.2f}\n")
+    conda:
+        "../envs/qc.yaml"
+    shell:
+        """
+        python workflow/scripts/calculate_frip.py \
+        --bams {input.bams} \
+        --peaks {input.peak} \
+        --output {output}
+        """
 
 # Rule: Generate a MultiQC report
 rule multiqc:
@@ -127,6 +106,8 @@ rule multiqc:
         get_multiqc  # Collect all files for MultiQC
     output:
         "qc/multiqc_report.html"  # MultiQC output report
+    conda:
+        "../envs/qc.yaml"
     shell:
         """
         cd qc/ && multiqc .

@@ -14,5 +14,5 @@ trimmed/
 results_*/
 qc/
 
-
+.ipynb_checkpoints
 slurm-*

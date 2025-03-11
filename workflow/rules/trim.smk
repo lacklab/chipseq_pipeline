@@ -41,40 +41,43 @@ rule trim_adapters:
         t1report="qc/trimgalore/{raw}_1.fastq.gz_trimming_report.txt",
         t2report="qc/trimgalore/{raw}_2.fastq.gz_trimming_report.txt"
     threads: 8
-    run:
-        lib = get_lib(wildcards)
-        if lib == "Single":
-            shell("""
-                fastqc --quiet --threads {threads} {input.link_fq1} -o qc/fastqc/
+    conda:
+        "../envs/trim.yaml"
+    params:
+        lib=lambda wildcards: get_lib(wildcards)
+    shell:
+        """
+        if [[ "{params.lib}" == "Single" ]]; then
+            fastqc --quiet --threads {threads} {input.link_fq1} -o qc/fastqc/
 
-                trim_galore --fastqc --cores {threads} --gzip {input.link_fq1}
+            trim_galore --fastqc --cores {threads} --gzip {input.link_fq1}
 
-                mv {wildcards.raw}_1_trimmed.fq.gz {output.trimmed_fq1}
-                mv {wildcards.raw}_1_trimmed_fastqc.html {output.t1fastqc}
-                mv {wildcards.raw}_1_trimmed_fastqc.zip {output.t1fastqc_z}
-                mv {wildcards.raw}_1.fastq.gz_trimming_report.txt {output.t1report}
+            mv {wildcards.raw}_1_trimmed.fq.gz {output.trimmed_fq1}
+            mv {wildcards.raw}_1_trimmed_fastqc.html {output.t1fastqc}
+            mv {wildcards.raw}_1_trimmed_fastqc.zip {output.t1fastqc_z}
+            mv {wildcards.raw}_1.fastq.gz_trimming_report.txt {output.t1report}
 
-                touch {output.trimmed_fq2}  # Placeholder for single-end
-                touch {output.fastqc2}
-                touch {output.t2fastqc}
-                touch {output.t2fastqc_z}
-                touch {output.t2report}
-            """)
-        elif lib == "Paired":
-            shell("""
-                fastqc --quiet --threads {threads} {input.link_fq1} {input.link_fq2} -o qc/fastqc/
+            touch {output.trimmed_fq2}  # Placeholder for single-end
+            touch {output.fastqc2}
+            touch {output.t2fastqc}
+            touch {output.t2fastqc_z}
+            touch {output.t2report}
 
-                trim_galore --fastqc --cores {threads} --paired --gzip {input.link_fq1} {input.link_fq2}
+        elif [[ "{params.lib}" == "Paired" ]]; then
+            fastqc --quiet --threads {threads} {input.link_fq1} {input.link_fq2} -o qc/fastqc/
 
-                mv {wildcards.raw}_1_val_1.fq.gz {output.trimmed_fq1}
-                mv {wildcards.raw}_2_val_2.fq.gz {output.trimmed_fq2}
+            trim_galore --fastqc --cores {threads} --paired --gzip {input.link_fq1} {input.link_fq2}
 
-                mv {wildcards.raw}_1_val_1_fastqc.html {output.t1fastqc}
-                mv {wildcards.raw}_2_val_2_fastqc.html {output.t2fastqc}
+            mv {wildcards.raw}_1_val_1.fq.gz {output.trimmed_fq1}
+            mv {wildcards.raw}_2_val_2.fq.gz {output.trimmed_fq2}
 
-                mv {wildcards.raw}_1_val_1_fastqc.zip {output.t1fastqc_z}
-                mv {wildcards.raw}_2_val_2_fastqc.zip {output.t2fastqc_z}
+            mv {wildcards.raw}_1_val_1_fastqc.html {output.t1fastqc}
+            mv {wildcards.raw}_2_val_2_fastqc.html {output.t2fastqc}
 
-                mv {wildcards.raw}_1.fastq.gz_trimming_report.txt {output.t1report}
-                mv {wildcards.raw}_2.fastq.gz_trimming_report.txt {output.t2report}
-            """)
+            mv {wildcards.raw}_1_val_1_fastqc.zip {output.t1fastqc_z}
+            mv {wildcards.raw}_2_val_2_fastqc.zip {output.t2fastqc_z}
+
+            mv {wildcards.raw}_1.fastq.gz_trimming_report.txt {output.t1report}
+            mv {wildcards.raw}_2.fastq.gz_trimming_report.txt {output.t2report}
+        fi
+        """

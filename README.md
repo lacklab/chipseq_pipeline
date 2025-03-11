@@ -67,7 +67,7 @@ Centralized quality control report using MultiQC, including:
 - `pandas`
 - `pysam`
 
-**Ensure all tools are properly installed and available in your system path.**
+**You don't need to install these individually. As long as you have Python, Snakemake and conda in your path, new environments will be created.**
 
 ---
 
@@ -86,6 +86,8 @@ Centralized quality control report using MultiQC, including:
 │   ├── config.yaml         # Configuration file for the cluster setup
 ├── qc/                     # QC reporting
 ├── workflow/                 
+│   ├── envs/              # Conda environment files
+│   ├── scripts/              # Scripts used in rules
 │   ├── rules/              # Snakemake rules for each step
 │   │   ├── annot.smk
 │   │   ├── bw.smk
@@ -98,9 +100,9 @@ Centralized quality control report using MultiQC, including:
 │   │   ├── sra.smk
 │   │   └── trim.smk
 │   └── Snakefile           # Main entry point for the pipeline
-├── raw-data/               # Raw sequencing data files (not included)
-├── sra-data/               # Raw sequencing data files from SRA (not included)
-├── results_{ref}/          # Output results directory
+├── raw-data/               # Raw sequencing data files (not includ
+├── sra-data/               # Raw sequencing data files from SRA (not includ
+├── results_{ref}/          # Output results direct
 ├── trimmed/                # Trimmed reads directory
 └── run_snakemake.sh        # Script to run the pipeline
 ```
@@ -193,18 +195,13 @@ Ensure that the `config/samples.tsv` file is properly formatted with the sample 
 The pipeline uses a Slurm cluster via the `profile/` directory. The `config.yaml` for the Slurm profile should include the following:
 
 ```yaml
-cluster:
-  mkdir -p logs/{rule} &&
-  sbatch
-    --partition={resources.partition}
-    --cpus-per-task={threads}
-    --mem={resources.mem_mb}
-    --job-name=smk-{rule}-{wildcards}
-    --output=logs/{rule}/{rule}-{wildcards}-%j.out
+executor: slurm
 default-resources:
-  - partition=normal,big-mem,long,express
-  - mem_mb=700000
-  - disk_mb=1024000
+  slurm_partition: "express,normal,big-mem,long"
+  mem_mb_per_cpu: 8096
+  mem_mb: None
+  disk_mb: 1024000
+  runtime: 600
 restart-times: 1
 max-jobs-per-second: 10
 max-status-checks-per-second: 1
@@ -216,10 +213,8 @@ rerun-incomplete: True
 printshellcmds: True
 scheduler: greedy
 use-conda: True
-
 ```
 - **Cluster Resources**: Adjust memory (mem_mb), disk (disk_mb), and partition names according to your Slurm setup.
-- **Logging**: Logs for each rule are stored in logs/{rule}/.
 
 ---
 ### 3. Submission Script

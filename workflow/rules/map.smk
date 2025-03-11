@@ -8,21 +8,22 @@ rule map_bwa:
         raw=temp("results_{ref}/mapping/{raw}.raw.bam"),  # Temporary raw BAM file
         log="qc/bwa/{ref}:{raw}.bwa.log"
     params:
-        idx = lambda wildcards: references[wildcards.ref]["BWA_IDX"]  # Path to BWA index
+        idx=lambda wildcards: references[wildcards.ref]["BWA_IDX"],
+        lib=lambda wildcards: get_lib(wildcards)
     threads:
         16  # Number of threads to use
-    run:
-        lib = get_lib(wildcards)
-        if lib == "Single":
-            shell("""
-                bwa mem -t {threads} {params.idx} {input.trimmed_fq1} 2> {output.log} \
-                | samtools view -bS - > {output.raw}
-                """)
-        elif lib == "Paired":
-            shell("""
-                bwa mem -t {threads} {params.idx} {input} 2> {output.log} \
-                | samtools view -bS - > {output.raw}
-            """)
+    conda:
+        "../envs/bwa.yaml"
+    shell:
+        """
+        if [[ "{params.lib}" == "Single" ]]; then
+            bwa mem -t {threads} {params.idx} {input.trimmed_fq1} 2> {output.log} \
+            | samtools view -bS - > {output.raw}
+        elif [[ "{params.lib}" == "Paired" ]]; then
+            bwa mem -t {threads} {params.idx} {input} 2> {output.log} \
+            | samtools view -bS - > {output.raw}
+        fi
+        """
 
 # Rule: Process BAM file (coordinate sorting, fixing mates, marking duplicates)
 rule bam_process:
@@ -34,6 +35,8 @@ rule bam_process:
         config["OUTPUT"]["BAMPROCESS_PARAMS"]  # Parameters for BAM processing
     threads:
         16
+    conda:
+        "../envs/bwa.yaml"
     shell:
         """
         samtools view -h {params} {input} \
@@ -54,6 +57,8 @@ rule bam_filter:
         bl = lambda wildcards: references[wildcards.ref]["BLACKLIST"]  # Path to blacklist file
     threads:
         16
+    conda:
+        "../envs/bedtools.yaml"
     shell:
         """
         samtools view {input} | egrep -v "chrM" \
@@ -69,26 +74,28 @@ rule bam_merge:
         "results_{ref}/mapping/{name}.final.bam"  # Final merged BAM file
     threads:
         16
-    run:
-        if str(input).find(' ') != -1:  # If multiple input BAM files are present
-            shell("""
-                samtools merge -@ {threads} -o {output} {input}
-                samtools index {output}
-            """)
-        else:  # If only a single BAM file
-            shell("""
-                mv {input} {output}
-                samtools index {output}
-            """)
+    conda:
+        "../envs/bwa.yaml"
+    shell:
+        """
+        if [[ $(echo {input} | grep ' ') ]]; then
+            samtools merge -@ {threads} -o {output} {input}
+        else
+            mv {input} {output}
+        fi
+        samtools index {output}
+        """
 
 # Rule: Create pseudoreplicates from the final BAM file
-# Will be deparcated!
+# Will be deprecated!
 rule pseudoreps:
     input:
         "results_{ref}/mapping/{name}.final.bam"  # Final BAM file
     output:
         pr1 = "results_{ref}/mapping/{name}.pr1.bam",  # First pseudoreplicate
         pr2 = "results_{ref}/mapping/{name}.pr2.bam"   # Second pseudoreplicate
+    conda:
+        "../envs/bwa.yaml"
     shell:
         """
         samtools index {input}
