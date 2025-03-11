@@ -12,6 +12,7 @@ references = yaml.safe_load(Path("config/references.yaml").read_text())
 # `samples` includes 'IP/CONTROL' pairs
 samples = pd.read_table(config["SAMPLES"])
 samples["Raw"] = samples["Name"] + "_" + samples["Unit"].astype(str)
+#print(samples)
 
 # Asset management
 assets = {}
@@ -51,7 +52,7 @@ def get_fastq(wildcards, fastq_col):
 
 
 def get_group_deeptools(wildcards):
-    return expand("results_{{ref}}/mapping/{name}.final.bam", name=samples["Name"].tolist())
+    return expand("results_{{ref}}/mapping/{name}.final.bam", name=samples.loc[samples['Genome'] == wildcards.ref, "Name"].tolist())
 
 def get_units(wildcards):
     return expand("results_{{ref}}/mapping/{rep}.filtered.bam", rep=samples.loc[samples["Name"] == wildcards.name, "Raw"].unique()) 
@@ -106,29 +107,30 @@ def get_multiqc(wildcards):
         ] # TODO: duplications
     }
     # Iterate through each sample and append all files based on the defined templates
-    for ref in config['OUTPUT']['REF']:
-        for q in config['OUTPUT']['MACS_THRESHOLD']:
-            for _, row in samples.iterrows():
-                raw = row['Raw']
-                name = row['Name']
 
-                is_control = name in controls
-                
-                # Generate output paths for each tool and file pattern
-                for tool, patterns in qc_tools_1.items():
-                    for pattern in patterns:
-                        out.append(f"qc/{tool}/{pattern.format(raw=raw, ref=ref, q=q)}")
+    for q in config['OUTPUT']['MACS_THRESHOLD']:
+        for _, row in samples.iterrows():
+            raw = row['Raw']
+            name = row['Name']
+            ref = row['Genome']
 
-                for tool, patterns in qc_tools_2.items():
-                    for pattern in patterns:
-                        if is_control:
-                            continue
-                        out.append(f"qc/{tool}/{pattern.format(name=name, ref=ref, q=q)}")
-   
+            is_control = name in controls
+            
+            # Generate output paths for each tool and file pattern
+            for tool, patterns in qc_tools_1.items():
+                for pattern in patterns:
+                    out.append(f"qc/{tool}/{pattern.format(raw=raw, ref=ref, q=q)}")
+
+            for tool, patterns in qc_tools_2.items():
+                for pattern in patterns:
+                    if is_control:
+                        continue
+                    out.append(f"qc/{tool}/{pattern.format(name=name, ref=ref, q=q)}")
+
     # Add FRIP score file (outside the loop as a single file)
         out.append(f"qc/{ref}:frip_mqc.tsv")
 
-    
+
     return expand(out)
 
 
@@ -137,7 +139,7 @@ def get_fqs(wildcards):
     fq1 = get_fastq(wildcards, "Fastq1")
     lib = get_lib(wildcards)
     if "SRR" in fq1:
-        return (f"{os.getcwd()}sra-data/{fq1}_1.fastq.gz", f"{os.getcwd()}/sra-data/{fq1}_2.fastq.gz") if lib == "Paired" else f"{os.getcwd()}/sra-data/{fq1}_1.fastq.gz"
+        return (f"sra-data/{fq1}_1.fastq.gz", f"sra-data/{fq1}_2.fastq.gz") if lib == "Paired" else f"sra-data/{fq1}_1.fastq.gz"
     fq2 = get_fastq(wildcards, "Fastq2")
     return (fq1, fq2) if lib == "Paired" else fq1
 
@@ -170,8 +172,7 @@ if config["OUTPUT"]["RUN"]["QC"]:
 
 if config["OUTPUT"]["RUN"]["PEAKS"]:
     outputs += [
-        f"results_{ref}/peaks/{row['Name']}_{q}_peaks.narrowPeak"
-        for ref in config['OUTPUT']['REF']
+        f"results_{row['Genome']}/peaks/{row['Name']}_{q}_peaks.narrowPeak"
         for q in config['OUTPUT']['MACS_THRESHOLD']
         for i, row in samples.iterrows()
 		if row['Name'] not in controls
@@ -180,9 +181,8 @@ if config["OUTPUT"]["RUN"]["PEAKS"]:
 
 if config["OUTPUT"]["RUN"]["BWS"]:
     outputs += [
-        f"results_{ref}/bigwig/{raw}.genomecov.{norm}.bw"
-        for ref in config['OUTPUT']['REF']
-        for raw in samples["Name"]
+        f"results_{row['Genome']}/bigwig/{row['Name']}.genomecov.{norm}.bw"
+        for i, row in samples.iterrows()
         for norm in bwNorm
     ]
 
@@ -190,18 +190,16 @@ if config["OUTPUT"]["RUN"]["CHIPATLASBED"]:
     caq = config["OUTPUT"]["CHIPATLASBED_THRESHOLD"]
     outputs += [
         f"results_{ref}/cabeds/{samples.loc[samples['GSM'] == gsm, 'Name'].iloc[0]}.{gsm}.{caq}.bed"
-        for ref in config['OUTPUT']['REF']
-        for gsm in samples["GSM"].unique()
+        for i, (gsm, ref) in samples[["GSM", "Genome"]].drop_duplicates().iterrows()
         if gsm in assets["gsm2srx"]
     ]
 
 if config["OUTPUT"]["RUN"]["CHIPATLASBIGWIG"]:
     outputs += [
         f"results_{ref}/cabws/{samples.loc[samples['GSM'] == gsm, 'Name'].iloc[0]}.{gsm}.bw"
-        for ref in config['OUTPUT']['REF']
-        for gsm in samples["GSM"].unique()
+        for i, (gsm, ref) in samples[["GSM", "Genome"]].drop_duplicates().iterrows()
         if gsm in assets["gsm2srx"]
     ]
 
 
-print(outputs)
+#print(outputs)

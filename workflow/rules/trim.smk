@@ -1,4 +1,6 @@
 # Rule: Link raw FASTQ files
+import os
+
 rule link:
     input:
         get_fqs
@@ -8,15 +10,18 @@ rule link:
     threads: 8
     run:
         lib = get_lib(wildcards)
+        fq1 = os.path.abspath(input[0])  # Get full absolute path for fq1
+        fq2 = os.path.abspath(input[1]) if len(input) > 1 else ""  # Get full absolute path for fq2 (if exists)
+
         if lib == "Single":
-            shell("""
-                ln -s {input[0]} {output.link_fq1}
+            shell(f"""
+                ln -s {fq1} {output.link_fq1}
                 touch {output.link_fq2}  # Placeholder for single-end
             """)
         elif lib == "Paired":
-            shell("""
-                ln -s {input[0]} {output.link_fq1}
-                ln -s {input[1]} {output.link_fq2}
+            shell(f"""
+                ln -s {fq1} {output.link_fq1}
+                ln -s {fq2} {output.link_fq2}
             """)
 
 # Rule: Trim adapters and perform QC

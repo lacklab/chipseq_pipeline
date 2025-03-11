@@ -58,6 +58,10 @@ Centralized quality control report using MultiQC, including:
 - Bedtools
 - MultiQC
 - ChIP-Atlas dependencies (aria2, wget)
+- SRA-tools
+- paralle-fastq-dump
+- deeptools
+- bedGraphToBigWig
 
 ### Python Packages:
 - `pandas`

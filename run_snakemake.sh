@@ -6,4 +6,4 @@
 source ~/.bashrc
 conda activate notebook
 
-snakemake --profile profile/
+snakemake -n --profile profile/

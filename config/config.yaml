@@ -3,8 +3,6 @@ SAMPLES: config/samples.tsv
 #UNITS: config/units.tsv
 
 OUTPUT:
-    REF: 
-        - hg38
     RUN:
         QC: True
         PEAKS: True
@@ -17,8 +15,6 @@ OUTPUT:
         - FPM
     MACS_THRESHOLD:
         - 0.01
-        - 0.05
-        - 0.1
     BAMPROCESS_PARAMS: -q 30
     CHIPATLASBED_THRESHOLD: '05'
 

@@ -69,8 +69,17 @@ rule annotatepeaks_qc:
 
 rule frip:
     input:
-        bams=expand("results_{{ref}}/mapping/{name}.final.bam", name=samples.loc[samples['Control'] != '-', "Name"].tolist()),   # Fetch BAM files for FRIP calculation
-        peak=expand("results_{{ref}}/peaks/{name}_{q}_peaks.narrowPeak", name=samples.loc[samples['Control'] != '-', "Name"].tolist(), q=config['OUTPUT']['MACS_THRESHOLD'])    # Fetch peak files for FRIP calculation
+        bams=lambda wildcards: expand(
+            "results_{ref}/mapping/{name}.final.bam",
+            ref=wildcards.ref,
+            name=samples.loc[(samples['Control'] != '-') & (samples['Genome'] == wildcards.ref), "Name"].tolist()
+        ),
+        peak=lambda wildcards: expand(
+            "results_{ref}/peaks/{name}_{q}_peaks.narrowPeak",
+            ref=wildcards.ref,
+            name=samples.loc[(samples['Control'] != '-') & (samples['Genome'] == wildcards.ref), "Name"].tolist(),
+            q=config['OUTPUT']['MACS_THRESHOLD']
+        )
     output:
         "qc/{ref}:frip_mqc.tsv"
     run:
