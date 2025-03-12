@@ -79,15 +79,15 @@ Centralized quality control report using MultiQC, including:
 ├── config/
 │   ├── config.yaml         # Configuration file for the pipeline
 │   ├── references.yaml     # A yaml file for the paths for the references used
-│   └── samples.tsv         # A yaml file for the paths for the references used
+│   └── samples.tsv         # A table that the samples to be run
 ├── link/                   # Will be created to softlink the raw data
 ├── logs/                   # Will be created for every rules to printout the logs
 ├── profile/
 │   ├── config.yaml         # Configuration file for the cluster setup
 ├── qc/                     # QC reporting
 ├── workflow/                 
-│   ├── envs/              # Conda environment files
-│   ├── scripts/              # Scripts used in rules
+│   ├── envs/               # Conda environment files
+│   ├── scripts/            # Scripts used in rules
 │   ├── rules/              # Snakemake rules for each step
 │   │   ├── annot.smk
 │   │   ├── bw.smk
@@ -100,9 +100,9 @@ Centralized quality control report using MultiQC, including:
 │   │   ├── sra.smk
 │   │   └── trim.smk
 │   └── Snakefile           # Main entry point for the pipeline
-├── raw-data/               # Raw sequencing data files (not includ
-├── sra-data/               # Raw sequencing data files from SRA (not includ
-├── results_{ref}/          # Output results direct
+├── raw-data/               # Raw sequencing data files (not included)
+├── sra-data/               # Raw sequencing data files from SRA (not included)
+├── results_{ref}/          # Output results directory
 ├── trimmed/                # Trimmed reads directory
 └── run_snakemake.sh        # Script to run the pipeline
 ```
@@ -113,12 +113,15 @@ Centralized quality control report using MultiQC, including:
 ##  📜 Input File
 The pipeline requires a **sample metadata file** in TSV format. Below is an example:
 
-| Name       | Unit | Control | Library | Fastq1                                        | Fastq2                                        |GSM      |
-|------------|------|---------|---------|-----------------------------------------------|-----------------------------------------------|---------|
-| LNCaP_AR   | r1   | LNCaP_input | Paired | /groups/lackgrp/raw_data/LNCP/ChIP-seq/AR_4h_R1_1.fq.gz | /groups/lackgrp/raw_data/LNCP/ChIP-seq/AR_4h_R1_2.fq.gz | - |
-| LNCaP_H3K27ac | r1   | LNCaP_input | Paired | /groups/lackgrp/raw_data/LNCP/ChIP-seq/H3K27ac_IP_4h_R1_1.fq.gz | /groups/lackgrp/raw_data/LNCP/ChIP-seq/H3K27ac_IP_4h_R1_2.fq.gz | - |
-| LNCaP_input   | r1   | -       | Paired | /groups/lackgrp/raw_data/LNCP/ChIP-seq/INPUT_IP_4h_R1_1.fq.gz | /groups/lackgrp/raw_data/LNCP/ChIP-seq/INPUT_IP_4h_R1_2.fq.gz | - |
-| PDX35_HOXB13	| r1   | -       | Single | SRR11856307 | - | GSM4569938
+
+
+| Name           | Unit | Control     | Library | Fastq1                                                                 | Fastq2                                                                 | GSM       | Genome |
+|-------------- |------|------------|---------|------------------------------------------------------------------------|------------------------------------------------------------------------|----------|--------|
+| LNCaP_AR      | r1   | LNCaP_input | Paired  | /groups/lackgrp/raw_data/LNCP/ChIP-seq/AR_4h_R1_1.fq.gz               | /groups/lackgrp/raw_data/LNCP/ChIP-seq/AR_4h_R1_2.fq.gz               | -        | hg38   |
+| LNCaP_H3K27ac | r1   | LNCaP_input | Paired  | /groups/lackgrp/raw_data/LNCP/ChIP-seq/H3K27ac_IP_4h_R1_1.fq.gz       | /groups/lackgrp/raw_data/LNCP/ChIP-seq/H3K27ac_IP_4h_R1_2.fq.gz       | -        | hg38   |
+| LNCaP_input   | r1   | -          | Paired  | /groups/lackgrp/raw_data/LNCP/ChIP-seq/INPUT_IP_4h_R1_1.fq.gz         | /groups/lackgrp/raw_data/LNCP/ChIP-seq/INPUT_IP_4h_R1_2.fq.gz         | -        | hg38   |
+| PDX35_HOXB13  | r1   | -          | Single  | SRR11856307                                                            | -                                                                      | GSM4569938 | hg38  |
+
 
 
 - **Name**: Group name.
@@ -128,6 +131,7 @@ The pipeline requires a **sample metadata file** in TSV format. Below is an exam
 - **Fastq1**: Path to raw FASTQ file (Forward Pair). **PS**: To trigger SRA fetch put the SRR number, if multiple SRR for the experiments, they will be merged under Name column.
 - **Fastq2**: Path to raw FASTQ file (Reverse Pair).
 - **GSM**: GSM identifier of publised experiment to allow ChIP-Atlas fetch.
+- **Genome**: The reference built that you want to run the sample in. See (`config/references.yaml`)
 
 ---
 
@@ -138,8 +142,6 @@ The configuration file (`config/config.yaml`) specifies pipeline parameters. Bel
 SAMPLES: config/samples.tsv
 
 OUTPUT:
-    REF: 
-        - hg38
     RUN:
         QC: True
         PEAKS: True
@@ -174,6 +176,8 @@ hg38:
     CHROM_SIZES: /groups/lackgrp/genomeAnnotations/hg38/hg38.chrom.sizes
     BLACKLIST: /groups/lackgrp/genomeAnnotations/hg38/hg38-blacklist.v2.bed
 ```
+
+The related conda environments are located in `workflow/envs/*.yaml`. No configuration is needed
 
 ---
 
@@ -223,12 +227,6 @@ Use the following run_pipeline.sh script to submit the pipeline to the Slurm clu
 
 ```bash
 #!/bin/bash
-#SBATCH -c 64
-#SBATCH --mem 720GB
-#SBATCH -p long,big-mem,normal,express
-
-source ~/.bashrc
-conda activate cutandrun
 
 snakemake --profile profile/
 
