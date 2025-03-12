@@ -81,7 +81,6 @@ Centralized quality control report using MultiQC, including:
 │   ├── references.yaml     # A yaml file for the paths for the references used
 │   └── samples.tsv         # A table that the samples to be run
 ├── link/                   # Will be created to softlink the raw data
-├── logs/                   # Will be created for every rules to printout the logs
 ├── profile/
 │   ├── config.yaml         # Configuration file for the cluster setup
 ├── qc/                     # QC reporting
