@@ -21,7 +21,7 @@ rule genomecov:
         bedtools genomecov -bg -ibam {input.bam} $(cat {output.params_file}) | \
         sort -k1,1 -k2,2n --parallel={threads} > {output.bg}
 
-        awk '!($1 ~ /_/' {output.bg} > {output.fbg} # Removes any chromosome containing "_"
+        awk '!($1 ~ /_/)' {output.bg} > {output.fbg} # Removes any chromosome containing "_"
         
         bedGraphToBigWig {output.fbg} {params.chrSizes} {output.bw}
         """
