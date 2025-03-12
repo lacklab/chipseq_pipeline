@@ -2,6 +2,8 @@
 rule sra_prefetch:
     output:
         temp("sra-data/{SRA}/{SRA}.sra")
+    conda:
+        "../envs/sra.yaml"
     shell:
         """
         prefetch -O sra-data {wildcards.SRA}
@@ -14,6 +16,8 @@ rule parallel_fastq_dump:
     output:
         r1 = "sra-data/{srr}_1.fastq.gz",
         r2 = "sra-data/{srr}_2.fastq.gz"
+    conda:
+        "../envs/sra.yaml"
     threads:
         64
     run:
