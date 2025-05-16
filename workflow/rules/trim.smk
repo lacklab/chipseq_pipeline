@@ -7,7 +7,7 @@ rule link:
     output:
         link_fq1="link/{raw}_1.fastq.gz",
         link_fq2="link/{raw}_2.fastq.gz"
-    threads: 8
+    threads: 2
     run:
         lib = get_lib(wildcards)
         fq1 = os.path.abspath(input[0])  # Get full absolute path for fq1
