@@ -13,6 +13,8 @@ link/
 trimmed/
 results_*/
 qc/
+slurm_logs/
+homer.package.zip
 
 .ipynb_checkpoints
 slurm-*
