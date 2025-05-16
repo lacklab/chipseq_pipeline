@@ -1,4 +1,4 @@
-name: chipseq_bedtools
+name: chipseq_sra
 channels:
   - conda-forge
   - bioconda
