@@ -4,7 +4,7 @@ SAMPLES: config/samples.tsv
 
 OUTPUT:
     RUN:
-        QC: True
+        QC: False
         PEAKS: True
         BWS: True
         CHIPATLASBED: False
